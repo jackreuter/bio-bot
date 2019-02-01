@@ -22,9 +22,17 @@
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:text="Save"
+            android:layout_below="@+id/buttonRead"
+            android:id="@+id/buttonSave"
+            android:onClick="onClickSave"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="Email"
+            android:layout_below="@+id/buttonSave"
             android:id="@+id/buttonEmail"
-            android:layout_below="@id/buttonRead"
             android:onClick="onClickEmail"/>
 
         <EditText
