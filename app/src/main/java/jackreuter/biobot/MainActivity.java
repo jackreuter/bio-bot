@@ -9,6 +9,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.net.Uri;
 import android.widget.Toast;
+import android.content.pm.PackageManager;
 
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
@@ -19,7 +20,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.StringBufferInputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,6 +30,8 @@ import android.content.Context;
 import android.util.Log;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.support.v4.content.ContextCompat;
+import android.Manifest;
 
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
@@ -135,6 +137,10 @@ public class MainActivity extends AppCompatActivity {
         filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
         filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
         registerReceiver(broadcastReceiver, filter);
+
+        int result = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION);
+        if (result == PackageManager.PERMISSION_GRANTED) {Log.d("","granted");}
+
     }
 
     public void setUiEnabled(boolean bool) {
@@ -172,6 +178,21 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(MainActivity.this, "No devices found",Toast.LENGTH_LONG).show();
         }
 
+    }
+
+    //create fake data string to manipulate w/o need for arduino
+    public void onClickTestRead(View view) {
+        String data = "file1<START>fake data blah blah<BREAK>file2<START>fakedata<BREAK>file3<START>bs blah blah";
+        String[] files = data.split(CUE_NEW_FILE);
+        filenames = new String[files.length];
+        contents = new String[files.length];
+        for (int i=0; i<files.length; i++) {
+            String[] fileLong = files[i].split(CUE_FILENAME);
+            filenames[i] = fileLong[0];
+            contents[i] = fileLong[1];
+            tvAppend(filenameView, fileLong[0]);
+        }
+        setUiEnabled(true);
     }
 
     //send cue '$' to read file from arduino
@@ -216,12 +237,13 @@ public class MainActivity extends AppCompatActivity {
 
         // See http://stackoverflow.com/questions/3551821/android-write-to-sd-card-folder
 
-        File dir = new File (root.getAbsolutePath() + "/download");
+        File dir = new File (root.getAbsolutePath() + "/data");
         dir.mkdirs();
         File file = new File(dir, filename);
 
         try {
             FileOutputStream f = new FileOutputStream(file);
+            Log.d("","output stream opened");
             PrintWriter pw = new PrintWriter(f);
             pw.print(content);
             pw.flush();

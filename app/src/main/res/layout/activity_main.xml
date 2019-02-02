@@ -15,7 +15,15 @@
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:text="TestRead"
+            android:id="@+id/buttonTestRead"
+            android:onClick="onClickTestRead"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="Read"
+            android:layout_below="@+id/buttonTestRead"
             android:id="@+id/buttonRead"
             android:onClick="onClickRead"/>
 
