@@ -15,6 +15,7 @@ import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.widget.Button;
+import android.support.v4.content.FileProvider;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -23,6 +24,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ArrayList;
 import java.io.PrintWriter;
 
 import android.content.BroadcastReceiver;
@@ -68,11 +70,12 @@ public class MainActivity extends AppCompatActivity {
                 String[] files = data.split(CUE_NEW_FILE);
                 filenames = new String[files.length];
                 contents = new String[files.length];
+                feedbackView.append(Integer.toString(files.length)+" files found:\n");
                 for (int i=0; i<files.length; i++) {
                     String[] fileLong = files[i].split(CUE_FILENAME);
                     filenames[i] = fileLong[0];
                     contents[i] = fileLong[1];
-                    tvAppend(filenameView, fileLong[0]);
+                    feedbackView.append(fileLong[0]+"\n");
                 }
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
@@ -174,10 +177,14 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         else {
-            //tvAppend(feedbackView, "No devices connected");
             Toast.makeText(MainActivity.this, "No devices found",Toast.LENGTH_LONG).show();
         }
+    }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(broadcastReceiver);
     }
 
     //create fake data string to manipulate w/o need for arduino
@@ -186,11 +193,12 @@ public class MainActivity extends AppCompatActivity {
         String[] files = data.split(CUE_NEW_FILE);
         filenames = new String[files.length];
         contents = new String[files.length];
+        feedbackView.append(Integer.toString(files.length)+" files found:\n");
         for (int i=0; i<files.length; i++) {
             String[] fileLong = files[i].split(CUE_FILENAME);
             filenames[i] = fileLong[0];
             contents[i] = fileLong[1];
-            tvAppend(filenameView, fileLong[0]);
+            feedbackView.append(fileLong[0]+"\n");
         }
         setUiEnabled(true);
     }
@@ -219,8 +227,7 @@ public class MainActivity extends AppCompatActivity {
             // Can't read or write
             mExternalStorageAvailable = mExternalStorageWriteable = false;
         }
-        filenameView.append("\n\nExternal Media: readable="
-                +mExternalStorageAvailable+" writable="+mExternalStorageWriteable);
+        //feedbackView.append("\n\nExternal Media: readable="+mExternalStorageAvailable+" writable="+mExternalStorageWriteable);
     }
 
     /** Method to write ascii text characters to file on SD card. Note that you must add a
@@ -233,7 +240,7 @@ public class MainActivity extends AppCompatActivity {
         // See http://developer.android.com/guide/topics/data/data-  storage.html#filesExternal
 
         File root = android.os.Environment.getExternalStorageDirectory();
-        filenameView.append("\nExternal file system root: "+root);
+        //feedbackView.append("\nExternal file system root: "+root);
 
         // See http://stackoverflow.com/questions/3551821/android-write-to-sd-card-folder
 
@@ -249,14 +256,13 @@ public class MainActivity extends AppCompatActivity {
             pw.flush();
             pw.close();
             f.close();
-            filenameView.append("\n\nFile written to "+file);
+            feedbackView.append("File written to "+file+"\n");
         } catch (FileNotFoundException e) {
             e.printStackTrace();
-            filenameView.append("******* File not found. Did you" +
-                    " add a WRITE_EXTERNAL_STORAGE permission to the   manifest?");
+            Toast.makeText(MainActivity.this, "Check permissions in app settings", Toast.LENGTH_LONG);
         } catch (IOException e) {
             e.printStackTrace();
-            filenameView.append("error");
+            Toast.makeText(MainActivity.this,"Enknown error", Toast.LENGTH_LONG);
         }
     }
 
@@ -270,12 +276,26 @@ public class MainActivity extends AppCompatActivity {
 
     //email files to email address
     public void onClickEmail(View view) {
-        Intent emailIntent = new Intent(Intent.ACTION_SEND);
-        emailIntent.setData(Uri.parse("mailto:"));
+
+        //need to "send multiple" to get more than one attachment
+        Intent emailIntent = new Intent(Intent.ACTION_SEND_MULTIPLE);
         emailIntent.setType("text/plain");
-        emailIntent.putExtra(Intent.EXTRA_EMAIL, EMAIL_RECIPIENT);
+        emailIntent.putExtra(android.content.Intent.EXTRA_EMAIL, EMAIL_RECIPIENT);
         emailIntent.putExtra(Intent.EXTRA_SUBJECT, EMAIL_SUBJECT);
-        emailIntent.putExtra(Intent.EXTRA_TEXT, "hello world");
+        emailIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+        //has to be an ArrayList
+        ArrayList<Uri> uris = new ArrayList<Uri>();
+
+        //convert from paths to Android friendly Parcelable Uri's
+        for (String filename : filenames)
+        {
+            File fileIn = new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/data", filename);
+            Uri u = FileProvider.getUriForFile(MainActivity.this,MainActivity.this.getApplicationContext().getPackageName() + ".provider", fileIn);
+            uris.add(u);
+        }
+
+        emailIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
 
         try {
             startActivity(Intent.createChooser(emailIntent, "Send mail..."));
@@ -292,16 +312,5 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(MainActivity.this, "Serial connection closed!", Toast.LENGTH_LONG);
     }
 
-    private void tvAppend(TextView tv, CharSequence text) {
-        final TextView ftv = tv;
-        final CharSequence ftext = text;
-
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                ftv.append(ftext);
-            }
-        });
-    }
-
 }
+
