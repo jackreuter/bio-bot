@@ -17,7 +17,7 @@ void loop() {
 
     //if character is $, designated trigger, send all data
     if (incomingByte == 36) {
-      Serial.print("file1<START>Here is a bunch of bullshit data, end character<BREAK>file2<START>bullshit data end character<BREAK>file3<START>thats all");
+      Serial.print("$file1<START>Here is a bunch of bullshit data, end character<BREAK>file2<START>bullshit data end character<BREAK>file3<START>thats all");
 
     //otherwise say what you got
     } else {

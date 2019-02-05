@@ -51,31 +51,35 @@ public class MainActivity extends AppCompatActivity {
     TextView filenameView;
     TextView feedbackView;
     UsbManager usbManager;
+    IntentFilter filter;
     UsbDevice device;
     UsbDeviceConnection connection;
     UsbSerialDevice serialPort;
     String[] filenames;
     String[] contents;
 
-    //saving to file
-    private static final String TAG = "MEDIA";
-
-    //callback to talk with arduino
+    /** callback used to communicate with arduino, takes arduino data and parses into
+     filenames[] and contents[] */
     UsbSerialInterface.UsbReadCallback mCallback = new UsbSerialInterface.UsbReadCallback() { //Defining a Callback which triggers whenever data is read.
         @Override
         public void onReceivedData(byte[] arg0) {
-            String data = null;
+            String data;
             try {
                 data = new String(arg0, "UTF-8");
-                String[] files = data.split(CUE_NEW_FILE);
-                filenames = new String[files.length];
-                contents = new String[files.length];
-                feedbackView.append(Integer.toString(files.length)+" files found:\n");
-                for (int i=0; i<files.length; i++) {
-                    String[] fileLong = files[i].split(CUE_FILENAME);
-                    filenames[i] = fileLong[0];
-                    contents[i] = fileLong[1];
-                    feedbackView.append(fileLong[0]+"\n");
+                if (data.substring(0,1).equals(CUE_START)) {
+                    data = data.substring(1);
+                    String[] files = data.split(CUE_NEW_FILE);
+                    filenames = new String[files.length];
+                    contents = new String[files.length];
+                    tvAppend(feedbackView, Integer.toString(files.length) + " files found:\n");
+                    for (int i = 0; i < files.length; i++) {
+                        String[] fileLong = files[i].split(CUE_FILENAME);
+                        filenames[i] = fileLong[0];
+                        contents[i] = fileLong[1];
+                        tvAppend(feedbackView, fileLong[0] + "\n");
+                    }
+                } else {
+                    tvAppend(feedbackView, "Received: " + data);
                 }
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
@@ -83,7 +87,8 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    //receiver to talk with arduino
+    /** triggered when connect method is called, opens up serial connection with Arduino,
+     sets communication parameters, uses mCallback to communicate */
     private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() { //Broadcast Receiver to automatically start and stop the Serial connection.
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -118,7 +123,8 @@ public class MainActivity extends AppCompatActivity {
             } else if (intent.getAction().equals(UsbManager.ACTION_USB_DEVICE_DETACHED)) {
                 endConnection();
             }
-        };
+        }
+
     };
 
     @Override
@@ -126,7 +132,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //talking to arduino
         usbManager = (UsbManager) getSystemService(this.USB_SERVICE);
         readButton = (Button) findViewById(R.id.buttonRead);
         saveButton = (Button) findViewById(R.id.buttonSave);
@@ -135,7 +140,8 @@ public class MainActivity extends AppCompatActivity {
         filenameView = (TextView) findViewById(R.id.filenameView);
         feedbackView = (TextView) findViewById(R.id.feedbackView);
         setUiEnabled(false);
-        IntentFilter filter = new IntentFilter();
+
+        filter = new IntentFilter();
         filter.addAction(ACTION_USB_PERMISSION);
         filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
         filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
@@ -144,16 +150,29 @@ public class MainActivity extends AppCompatActivity {
         int result = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION);
         if (result == PackageManager.PERMISSION_GRANTED) {Log.d("","granted");}
 
+        connect();
+
     }
 
+    /** enable or disable buttons */
     public void setUiEnabled(boolean bool) {
         readButton.setEnabled(bool);
         saveButton.setEnabled(bool);
         emailButton.setEnabled(bool);
     }
 
-    //cue arduino to feed files through serial, with escape characters, ending with terminal character
-    //save files
+    /** to print feedback during callback thread */
+    private void tvAppend(TextView tv, CharSequence text) {
+        final TextView ftv = tv;
+        final CharSequence ftext = text;
+        runOnUiThread(new Runnable() {
+            @Override public void run() {
+                ftv.append(ftext);
+            }
+        });
+    }
+
+    /** connects arduino if found, triggers broadcastReceiver to open up a serial connection */
     public void connect() {
         HashMap<String, UsbDevice> usbDevices = usbManager.getDeviceList();
         if (!usbDevices.isEmpty()) {
@@ -162,11 +181,13 @@ public class MainActivity extends AppCompatActivity {
                 device = entry.getValue();
                 int deviceVID = device.getVendorId();
                 Toast.makeText(MainActivity.this, Integer.toString(deviceVID),Toast.LENGTH_LONG).show();
-                if (deviceVID == 6790)//Arduino Vendor ID, not sure where to find this
+                if (deviceVID == 6790)//Arduino Vendor ID, not sure where to find
                 {
-                    PendingIntent pi = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
+                    PendingIntent pi = PendingIntent.getBroadcast(this, 0,
+                            new Intent(ACTION_USB_PERMISSION), 0);
                     usbManager.requestPermission(device, pi);
                     keep = false;
+
                 } else {
                     connection = null;
                     device = null;
@@ -181,13 +202,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        unregisterReceiver(broadcastReceiver);
-    }
-
-    //create fake data string to manipulate w/o need for arduino
+    /** create fake data string to manipulate w/o need for arduino */
     public void onClickTestRead(View view) {
         String data = "file1<START>fake data blah blah<BREAK>file2<START>fakedata<BREAK>file3<START>bs blah blah";
         String[] files = data.split(CUE_NEW_FILE);
@@ -203,14 +218,13 @@ public class MainActivity extends AppCompatActivity {
         setUiEnabled(true);
     }
 
-    //send cue '$' to read file from arduino
+    /** send cue '$' to read file from arduino */
     public void onClickRead(View view) {
         serialPort.write(CUE_START.getBytes());
     }
 
     /** Method to check whether external media available and writable. This is adapted from
      http://developer.android.com/guide/topics/data/data-storage.html#filesExternal */
-
     private void checkExternalMedia(){
         boolean mExternalStorageAvailable = false;
         boolean mExternalStorageWriteable = false;
@@ -233,8 +247,7 @@ public class MainActivity extends AppCompatActivity {
     /** Method to write ascii text characters to file on SD card. Note that you must add a
      WRITE_EXTERNAL_STORAGE permission to the manifest file or this method will throw
      a FileNotFound Exception because you won't have write permission. */
-
-    private void writeToSDFile(String filename, String content){
+    private void writeToSDFile(String[] filenames, String[] contents){
 
         // Find the root of the external storage.
         // See http://developer.android.com/guide/topics/data/data-  storage.html#filesExternal
@@ -246,37 +259,35 @@ public class MainActivity extends AppCompatActivity {
 
         File dir = new File (root.getAbsolutePath() + "/data");
         dir.mkdirs();
-        File file = new File(dir, filename);
 
         try {
-            FileOutputStream f = new FileOutputStream(file);
-            Log.d("","output stream opened");
-            PrintWriter pw = new PrintWriter(f);
-            pw.print(content);
-            pw.flush();
-            pw.close();
-            f.close();
-            feedbackView.append("File written to "+file+"\n");
+            for (int i=0; i<filenames.length; i++) {
+                File file = new File(dir, filenames[i]);
+                FileOutputStream f = new FileOutputStream(file);
+                PrintWriter pw = new PrintWriter(f);
+                pw.print(contents[i]);
+                pw.flush();
+                pw.close();
+                f.close();
+                feedbackView.append("File written to " + file + "\n");
+            }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
-            Toast.makeText(MainActivity.this, "Check permissions in app settings", Toast.LENGTH_LONG);
+            feedbackView.append("Check permissions in app settings");
         } catch (IOException e) {
             e.printStackTrace();
-            Toast.makeText(MainActivity.this,"Enknown error", Toast.LENGTH_LONG);
+            feedbackView.append("Unknown error");
         }
     }
 
-    //saving to file
+    /** save files stored in global variables filenames[] and contents[] to SD card */
     public void onClickSave(View view) {
         checkExternalMedia();
-        for (int i=0; i<filenames.length; i++) {
-            writeToSDFile(filenames[i],contents[i]);
-        }
+        writeToSDFile(filenames,contents);
     }
 
-    //email files to email address
+    /** give option to email files as attachments to EMAIL_RECIPIENT or upload them to cloud storage */
     public void onClickEmail(View view) {
-
         //need to "send multiple" to get more than one attachment
         Intent emailIntent = new Intent(Intent.ACTION_SEND_MULTIPLE);
         emailIntent.setType("text/plain");
@@ -301,15 +312,15 @@ public class MainActivity extends AppCompatActivity {
             startActivity(Intent.createChooser(emailIntent, "Send mail..."));
             finish();
         } catch (android.content.ActivityNotFoundException ex) {
-            Toast.makeText(MainActivity.this, "There is no email client installed.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(MainActivity.this, "There is no email client installed.", Toast.LENGTH_LONG).show();
         }
     }
 
-    //end connection if disconnected
+    /** end connection if disconnected */
     public void endConnection() {
         setUiEnabled(false);
         serialPort.close();
-        Toast.makeText(MainActivity.this, "Serial connection closed!", Toast.LENGTH_LONG);
+        tvAppend(feedbackView, "Serial connection closed!");
     }
 
 }
