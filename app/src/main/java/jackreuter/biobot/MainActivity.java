@@ -9,6 +9,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.net.Uri;
 import android.widget.Toast;
+import android.widget.ScrollView;
 import android.content.pm.PackageManager;
 
 import android.hardware.usb.UsbDevice;
@@ -49,37 +50,45 @@ public class MainActivity extends AppCompatActivity {
     Button readButton, saveButton, emailButton;
     EditText identifierText;
     TextView filenameView;
+    ScrollView feedbackContainer;
     TextView feedbackView;
     UsbManager usbManager;
     IntentFilter filter;
     UsbDevice device;
     UsbDeviceConnection connection;
-    UsbSerialDevice serialPort;
+    com.felhr.usbserial.UsbSerialDevice serialPort;
     String[] filenames;
     String[] contents;
 
     /** callback used to communicate with arduino, takes arduino data and parses into
      filenames[] and contents[] */
-    UsbSerialInterface.UsbReadCallback mCallback = new UsbSerialInterface.UsbReadCallback() { //Defining a Callback which triggers whenever data is read.
+    com.felhr.usbserial.UsbSerialInterface.UsbReadCallback mCallback = new UsbSerialInterface.UsbReadCallback() { //Defining a Callback which triggers whenever data is read.
         @Override
         public void onReceivedData(byte[] arg0) {
             String data;
             try {
                 data = new String(arg0, "UTF-8");
-                if (data.substring(0,1).equals(CUE_START)) {
-                    data = data.substring(1);
-                    String[] files = data.split(CUE_NEW_FILE);
-                    filenames = new String[files.length];
-                    contents = new String[files.length];
-                    tvAppend(feedbackView, Integer.toString(files.length) + " files found:\n");
-                    for (int i = 0; i < files.length; i++) {
-                        String[] fileLong = files[i].split(CUE_FILENAME);
-                        filenames[i] = fileLong[0];
-                        contents[i] = fileLong[1];
-                        tvAppend(feedbackView, fileLong[0] + "\n");
+                if (data.length() > 0) {
+                    if (data.substring(0, 1).equals(CUE_START)) {
+                        data = data.substring(1);
+                        String[] files = data.split(CUE_NEW_FILE);
+                        filenames = new String[files.length];
+                        contents = new String[files.length];
+                        tvAppend(feedbackView, Integer.toString(files.length) + " files found:\n");
+                        for (int i = 0; i < files.length; i++) {
+                            String[] fileLong = files[i].split(CUE_FILENAME);
+                            filenames[i] = fileLong[0];
+                            contents[i] = fileLong[1];
+                            tvAppend(feedbackView, fileLong[0] + "\n");
+                        }
+                        if (files.length > 0) {
+                            buttonEnable(saveButton, true);
+                        }
+                    } else {
+                        tvAppend(feedbackView, "Received: " + data + "\n");
                     }
                 } else {
-                    tvAppend(feedbackView, "Received: " + data);
+                    tvAppend(feedbackView, "\n");
                 }
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
@@ -100,7 +109,7 @@ public class MainActivity extends AppCompatActivity {
                     serialPort = UsbSerialDevice.createUsbSerialDevice(device, connection);
                     if (serialPort != null) {
                         if (serialPort.open()) { //Set Serial Connection Parameters.
-                            setUiEnabled(true); //Enable Buttons in UI
+                            readButton.setEnabled(true); //Enable Buttons in UI
                             serialPort.setBaudRate(9600);
                             serialPort.setDataBits(UsbSerialInterface.DATA_BITS_8);
                             serialPort.setStopBits(UsbSerialInterface.STOP_BITS_1);
@@ -127,18 +136,58 @@ public class MainActivity extends AppCompatActivity {
 
     };
 
+    /**
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(broadcastReceiver);
+    }
+
+    /**
+    @Override
+    protected void onResume() {
+        super.onResume();
+        filter = new IntentFilter();
+        filter.addAction(ACTION_USB_PERMISSION);
+        filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
+        filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
+        registerReceiver(broadcastReceiver, filter);
+    }
+     **/
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean("isReadButtonEnabled",readButton.isEnabled());
+        outState.putBoolean("isSaveButtonEnabled",saveButton.isEnabled());
+        outState.putBoolean("isEmailButtonEnabled",emailButton.isEnabled());
+        outState.putCharSequence("feedbackViewText", feedbackView.getText());
+        if (filenames != null) {
+            outState.putStringArray("filenames", filenames);
+        } else {
+            outState.putStringArray("filenames", new String[0]);
+        }
+        if (contents != null) {
+            outState.putStringArray("contents", contents);
+        } else {
+            outState.putStringArray("contents", new String[0]);
+        }
+
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         usbManager = (UsbManager) getSystemService(this.USB_SERVICE);
         readButton = (Button) findViewById(R.id.buttonRead);
         saveButton = (Button) findViewById(R.id.buttonSave);
         emailButton = (Button) findViewById(R.id.buttonEmail);
-        identifierText = (EditText) findViewById(R.id.identifierText);
-        filenameView = (TextView) findViewById(R.id.filenameView);
-        feedbackView = (TextView) findViewById(R.id.feedbackView);
+        //identifierText = (EditText) findViewById(R.id.identifierText);
+        //filenameView = (TextView) findViewById(R.id.filenameView);
+        feedbackContainer = (ScrollView) findViewById(R.id.feedbackContainer);
+        feedbackView = new TextView(this);
+        feedbackContainer.addView(feedbackView);
         setUiEnabled(false);
 
         filter = new IntentFilter();
@@ -147,13 +196,22 @@ public class MainActivity extends AppCompatActivity {
         filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
         registerReceiver(broadcastReceiver, filter);
 
-        int result = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION);
-        if (result == PackageManager.PERMISSION_GRANTED) {Log.d("","granted");}
+        //int result = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION);
+        //if (result == PackageManager.PERMISSION_GRANTED) {Log.d("","granted");}
 
         connect();
 
+        if (savedInstanceState != null) {
+            feedbackView.append(savedInstanceState.getCharSequence("feedbackViewText"));
+            filenames = savedInstanceState.getStringArray("filenames");
+            contents = savedInstanceState.getStringArray("contents");
+            readButton.setEnabled(savedInstanceState.getBoolean("isReadButtonEnabled"));
+            saveButton.setEnabled(savedInstanceState.getBoolean("isSaveButtonEnabled"));
+            emailButton.setEnabled(savedInstanceState.getBoolean("isEmailButtonEnabled"));
+        }
     }
 
+    /** unregister the broadcast Receiver */
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -178,6 +236,17 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    /** set UIenabled during callback thread */
+    private void buttonEnable(Button button, Boolean choice) {
+        final Button b = button;
+        final Boolean bool = choice;
+        runOnUiThread(new Runnable() {
+            @Override public void run() {
+                b.setEnabled(bool);
+            }
+        });
+    }
+
     /** connects arduino if found, triggers broadcastReceiver to open up a serial connection */
     public void connect() {
         HashMap<String, UsbDevice> usbDevices = usbManager.getDeviceList();
@@ -186,15 +255,16 @@ public class MainActivity extends AppCompatActivity {
             for (Map.Entry<String, UsbDevice> entry : usbDevices.entrySet()) {
                 device = entry.getValue();
                 int deviceVID = device.getVendorId();
-                Toast.makeText(MainActivity.this, Integer.toString(deviceVID),Toast.LENGTH_LONG).show();
-                if (deviceVID == 6790)//Arduino Vendor ID, not sure where to find
+                Toast.makeText(MainActivity.this, "Device ID: " + Integer.toString(deviceVID),Toast.LENGTH_LONG).show();
+                //if (deviceVID == 6790)//Arduino Vendor ID, not sure where to find
+                try
                 {
                     PendingIntent pi = PendingIntent.getBroadcast(this, 0,
                             new Intent(ACTION_USB_PERMISSION), 0);
                     usbManager.requestPermission(device, pi);
                     keep = false;
 
-                } else {
+                } catch (Exception e) {
                     connection = null;
                     device = null;
                 }
@@ -221,7 +291,9 @@ public class MainActivity extends AppCompatActivity {
             contents[i] = fileLong[1];
             feedbackView.append(fileLong[0]+"\n");
         }
-        setUiEnabled(true);
+        if (filenames.length > 0) {
+            saveButton.setEnabled(true);
+        }
     }
 
     /** send cue '$' to read file from arduino */
@@ -276,13 +348,14 @@ public class MainActivity extends AppCompatActivity {
                 pw.close();
                 f.close();
                 feedbackView.append("File written to " + file + "\n");
+                emailButton.setEnabled(true);
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
-            feedbackView.append("Check permissions in app settings");
+            feedbackView.append("Check permissions in app settings\n");
         } catch (IOException e) {
             e.printStackTrace();
-            feedbackView.append("Unknown error");
+            feedbackView.append("Unknown error\n");
         }
     }
 
@@ -324,9 +397,11 @@ public class MainActivity extends AppCompatActivity {
 
     /** end connection if disconnected */
     public void endConnection() {
-        setUiEnabled(false);
-        serialPort.close();
-        tvAppend(feedbackView, "Serial connection closed!");
+        readButton.setEnabled(false);
+        if (serialPort != null) {
+            serialPort.close();
+            Toast.makeText(MainActivity.this, "Serial connection closed", Toast.LENGTH_LONG).show();
+        }
     }
 
 }

@@ -43,6 +43,7 @@
             android:id="@+id/buttonEmail"
             android:onClick="onClickEmail"/>
 
+<!--
         <EditText
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -68,12 +69,12 @@
             android:text="filename"
             android:id="@+id/filenameLabel"
             android:layout_below="@id/filenameView"/>
-
-        <TextView
-            android:layout_width="wrap_content"
+-->
+        <ScrollView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/feedbackView"
-            android:layout_below="@+id/filenameLabel" />
+            android:id="@+id/feedbackContainer"
+            android:layout_below="@+id/buttonEmail" />
 
     </RelativeLayout>
 
