@@ -155,6 +155,7 @@ public class MainActivity extends AppCompatActivity {
     }
      **/
 
+    /** save variables during recreation, e.g. rotation*/
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
@@ -175,6 +176,8 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    /** create variables, receiver, try to connect in case already plugged in
+     get variables from savedInstanceState if possible */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
