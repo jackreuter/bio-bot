@@ -50,6 +50,11 @@ public class MainActivity extends AppCompatActivity {
     public final String END_TRANSMISSION = "&";
     public final String INQUIRY = "~";
     public final String ID = "*";
+    public final String testData = "!190111_I.TXT$" +
+            "[TONS OF TEXT]" +
+            "^!190117_A.TXT$" +
+            "[TONS OF TEXT]" +
+            "^&";
     Button readButton, saveButton, emailButton;
     EditText identifierText;
     TextView filenameView;
@@ -292,22 +297,35 @@ public class MainActivity extends AppCompatActivity {
 
     /** create fake data string to manipulate w/o need for arduino */
     public void onClickTestRead(View view) {
-        /**
-        String data = "file1<START>fake data blah blah<BREAK>file2<START>fakedata<BREAK>file3<START>bs blah blah";
-        String[] files = data.split(CUE_NEW_FILE);
-        filenames = new String[files.length];
-        contents = new String[files.length];
-        feedbackView.append(Integer.toString(files.length)+" files found:\n");
-        for (int i=0; i<files.length; i++) {
-            String[] fileLong = files[i].split(CUE_FILENAME);
-            filenames[i] = fileLong[0];
-            contents[i] = fileLong[1];
-            feedbackView.append(fileLong[0]+"\n");
+        String data = testData;
+        if (data.length() > 0) {
+            String cue = data.substring(0, 1);
+            if (cue.equals(START_FILENAME)) {
+
+                //split data into array of files,
+                String[] files = data.split(END_FILE);
+
+                //ditch the end character
+                filenames = new String[files.length - 1];
+                contents = new String[files.length - 1];
+                tvAppend(feedbackView, Integer.toString(files.length - 1) + " files found:\n");
+
+                //split files into filenames and contents
+                for (int i = 0; i < files.length - 1; i++) {
+                    String[] fileAndContents = files[i].split(START_FILE);
+                    filenames[i] = fileAndContents[0].substring(1);
+                    contents[i] = fileAndContents[1];
+                    tvAppend(feedbackView, filenames[i] + "\n");
+                }
+                if (filenames.length > 0) {
+                    buttonEnable(saveButton, true);
+                }
+            } else {
+                tvAppend(feedbackView, "Received: " + data + "\n");
+            }
+        } else {
+            tvAppend(feedbackView, "\n");
         }
-        if (filenames.length > 0) {
-            saveButton.setEnabled(true);
-        }
-         */
     }
 
     /** send cue to read file from arduino */
