@@ -44,9 +44,12 @@ public class MainActivity extends AppCompatActivity {
     public final String ACTION_USB_PERMISSION = "com.hariharan.arduinousb.USB_PERMISSION";
     public final String[] EMAIL_RECIPIENT = {"jreuter@wesleyan.edu"};
     public final String EMAIL_SUBJECT = "BIOBOT";
-    public final String CUE_START = "$";
-    public final String CUE_FILENAME = "<START>";
-    public final String CUE_NEW_FILE = "<BREAK>";
+    public final String START_FILENAME = "!";
+    public final String START_FILE = "\\$";
+    public final String END_FILE = "\\^";
+    public final String END_TRANSMISSION = "&";
+    public final String INQUIRY = "~";
+    public final String ID = "*";
     Button readButton, saveButton, emailButton;
     EditText identifierText;
     TextView filenameView;
@@ -69,19 +72,25 @@ public class MainActivity extends AppCompatActivity {
             try {
                 data = new String(arg0, "UTF-8");
                 if (data.length() > 0) {
-                    if (data.substring(0, 1).equals(CUE_START)) {
-                        data = data.substring(1);
-                        String[] files = data.split(CUE_NEW_FILE);
-                        filenames = new String[files.length];
-                        contents = new String[files.length];
-                        tvAppend(feedbackView, Integer.toString(files.length) + " files found:\n");
-                        for (int i = 0; i < files.length; i++) {
-                            String[] fileLong = files[i].split(CUE_FILENAME);
-                            filenames[i] = fileLong[0];
-                            contents[i] = fileLong[1];
-                            tvAppend(feedbackView, fileLong[0] + "\n");
+                    String cue = data.substring(0, 1);
+                    if (cue.equals(START_FILENAME)) {
+
+                        //split data into array of files,
+                        String[] files = data.split(END_FILE);
+
+                        //ditch the end character
+                        filenames = new String[files.length - 1];
+                        contents = new String[files.length - 1];
+                        tvAppend(feedbackView, Integer.toString(files.length - 1) + " files found:\n");
+
+                        //split files into filenames and contents
+                        for (int i = 0; i < files.length - 1; i++) {
+                            String[] fileAndContents = files[i].split(START_FILE);
+                            filenames[i] = fileAndContents[0].substring(1);
+                            contents[i] = fileAndContents[1];
+                            tvAppend(feedbackView, filenames[i] + "\n");
                         }
-                        if (files.length > 0) {
+                        if (filenames.length > 0) {
                             buttonEnable(saveButton, true);
                         }
                     } else {
@@ -258,7 +267,7 @@ public class MainActivity extends AppCompatActivity {
             for (Map.Entry<String, UsbDevice> entry : usbDevices.entrySet()) {
                 device = entry.getValue();
                 int deviceVID = device.getVendorId();
-                Toast.makeText(MainActivity.this, "Device ID: " + Integer.toString(deviceVID),Toast.LENGTH_LONG).show();
+                Toast.makeText(MainActivity.this, "Vendor ID: " + Integer.toString(deviceVID),Toast.LENGTH_LONG).show();
                 //if (deviceVID == 6790)//Arduino Vendor ID, not sure where to find
                 try
                 {
@@ -283,6 +292,7 @@ public class MainActivity extends AppCompatActivity {
 
     /** create fake data string to manipulate w/o need for arduino */
     public void onClickTestRead(View view) {
+        /**
         String data = "file1<START>fake data blah blah<BREAK>file2<START>fakedata<BREAK>file3<START>bs blah blah";
         String[] files = data.split(CUE_NEW_FILE);
         filenames = new String[files.length];
@@ -297,11 +307,12 @@ public class MainActivity extends AppCompatActivity {
         if (filenames.length > 0) {
             saveButton.setEnabled(true);
         }
+         */
     }
 
-    /** send cue '$' to read file from arduino */
+    /** send cue to read file from arduino */
     public void onClickRead(View view) {
-        serialPort.write(CUE_START.getBytes());
+        serialPort.write(INQUIRY.getBytes());
     }
 
     /** Method to check whether external media available and writable. This is adapted from
