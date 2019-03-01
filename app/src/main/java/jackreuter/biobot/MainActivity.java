@@ -1,16 +1,28 @@
 package jackreuter.biobot;
 
+import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.PendingIntent;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.location.Location;
+import android.location.LocationManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.Settings;
+import android.support.annotation.RequiresApi;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.net.Uri;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Toast;
 import android.widget.ScrollView;
-import android.content.pm.PackageManager;
 
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
@@ -23,10 +35,14 @@ import java.io.FileOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ArrayList;
 import java.io.PrintWriter;
+import java.util.TimeZone;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -39,9 +55,28 @@ import android.Manifest;
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
 
-public class MainActivity extends AppCompatActivity {
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.model.LatLng;
 
+import org.w3c.dom.Text;
+
+public class MainActivity extends Activity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener {
+
+    //location services
+    private GoogleApiClient googleApiClient;
+    private LocationManager locationManager;
+    private LocationRequest locationRequest;
+    private Location location;
+    private long UPDATE_INTERVAL = 2 * 1000;  /* 10 secs */
+    private long FASTEST_INTERVAL = 2000; /* 2 sec */
+
+    //arduinoUSB
     public final String ACTION_USB_PERMISSION = "com.hariharan.arduinousb.USB_PERMISSION";
+
+    //email data and file parsing
     public final String[] EMAIL_RECIPIENT = {"jreuter@wesleyan.edu"};
     public final String EMAIL_SUBJECT = "BIOBOT";
     public final String START_FILENAME = "!";
@@ -50,14 +85,18 @@ public class MainActivity extends AppCompatActivity {
     public final String END_TRANSMISSION = "&";
     public final String INQUIRY = "~";
     public final String ID = "*";
+
+    //must equal name field in provider_paths.xml
+    public final String FOLDER_NAME = "data";
+
     public final String testData = "!190111_I.TXT$" +
             "[TONS OF TEXT]" +
             "^!190117_A.TXT$" +
             "[TONS OF TEXT]" +
             "^&";
-    Button readButton, saveButton, emailButton;
-    EditText identifierText;
-    TextView filenameView;
+    Button loginButton, readButton, saveButton, emailButton;
+    TextView userIDTextView, manholeTextView;
+    EditText userIDEditText, manholeEditText;
     ScrollView feedbackContainer;
     TextView feedbackView;
     UsbManager usbManager;
@@ -67,6 +106,11 @@ public class MainActivity extends AppCompatActivity {
     com.felhr.usbserial.UsbSerialDevice serialPort;
     String[] filenames;
     String[] contents;
+
+    Boolean loggedIn;
+    String userID;
+    String manholeLocation;
+    String metadataString;
 
     /** callback used to communicate with arduino, takes arduino data and parses into
      filenames[] and contents[] */
@@ -95,8 +139,10 @@ public class MainActivity extends AppCompatActivity {
                             contents[i] = fileAndContents[1];
                             tvAppend(feedbackView, filenames[i] + "\n");
                         }
+                        tvAppend(feedbackView, "\n");
                         if (filenames.length > 0) {
                             buttonEnable(saveButton, true);
+                            updateMetadata();
                         }
                     } else {
                         tvAppend(feedbackView, "Received: " + data + "\n");
@@ -130,53 +176,61 @@ public class MainActivity extends AppCompatActivity {
                             serialPort.setParity(UsbSerialInterface.PARITY_NONE);
                             serialPort.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
                             serialPort.read(mCallback); //
-                            Toast.makeText(MainActivity.this, "Serial connection opened",Toast.LENGTH_LONG).show();
+                            Toast.makeText(MainActivity.this, "Serial connection opened", Toast.LENGTH_LONG).show();
 
                         } else {
-                            Toast.makeText(MainActivity.this, "Port not open",Toast.LENGTH_LONG).show();
+                            Toast.makeText(MainActivity.this, "Port not open", Toast.LENGTH_LONG).show();
                         }
                     } else {
-                        Toast.makeText(MainActivity.this, "Port is null",Toast.LENGTH_LONG).show();
+                        Toast.makeText(MainActivity.this, "Port is null", Toast.LENGTH_LONG).show();
                     }
                 } else {
-                    Toast.makeText(MainActivity.this, "Permission not granted",Toast.LENGTH_LONG).show();
+                    Toast.makeText(MainActivity.this, "Permission not granted", Toast.LENGTH_LONG).show();
                 }
             } else if (intent.getAction().equals(UsbManager.ACTION_USB_DEVICE_ATTACHED)) {
-                connect();
+                connectArduino();
             } else if (intent.getAction().equals(UsbManager.ACTION_USB_DEVICE_DETACHED)) {
-                endConnection();
+                endSerialConnection();
             }
         }
 
     };
 
     /**
-    @Override
-    protected void onPause() {
-        super.onPause();
-        unregisterReceiver(broadcastReceiver);
-    }
+     @Override protected void onPause() {
+     super.onPause();
+     unregisterReceiver(broadcastReceiver);
+     }
 
-    /**
-    @Override
-    protected void onResume() {
-        super.onResume();
-        filter = new IntentFilter();
-        filter.addAction(ACTION_USB_PERMISSION);
-        filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
-        filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
-        registerReceiver(broadcastReceiver, filter);
-    }
+     /**
+     @Override protected void onResume() {
+     super.onResume();
+     filter = new IntentFilter();
+     filter.addAction(ACTION_USB_PERMISSION);
+     filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
+     filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
+     registerReceiver(broadcastReceiver, filter);
+     }
      **/
 
     /** save variables during recreation, e.g. rotation*/
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putBoolean("isReadButtonEnabled",readButton.isEnabled());
-        outState.putBoolean("isSaveButtonEnabled",saveButton.isEnabled());
-        outState.putBoolean("isEmailButtonEnabled",emailButton.isEnabled());
+        outState.putString("userID", userID);
+        outState.putBoolean("isUserLoggedIn", loggedIn);
+        outState.putBoolean("isReadButtonEnabled", readButton.isEnabled());
+        outState.putBoolean("isSaveButtonEnabled", saveButton.isEnabled());
+        outState.putBoolean("isEmailButtonEnabled", emailButton.isEnabled());
         outState.putCharSequence("feedbackViewText", feedbackView.getText());
+
+        String manholeTextEntered = manholeEditText.getText().toString();
+        if (manholeTextEntered != null) {
+            outState.putString("manholeTextEntered", manholeTextEntered);
+        } else {
+            outState.putString("manholeTextEntered", "");
+        }
+
         if (filenames != null) {
             outState.putStringArray("filenames", filenames);
         } else {
@@ -192,20 +246,51 @@ public class MainActivity extends AppCompatActivity {
 
     /** create variables, receiver, try to connect in case already plugged in
      get variables from savedInstanceState if possible */
+    @RequiresApi(api = 23)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        //Remove title bar
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+        //Remove notification bar
+        this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
         setContentView(R.layout.activity_main);
+
         usbManager = (UsbManager) getSystemService(this.USB_SERVICE);
+
+        String[] permissions = {Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE};
+        requestPermissions(permissions, 1);
+
+        googleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
+        locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        checkLocation(); //check whether location service is enable or not in your  phone
+
+        userIDTextView = (TextView) findViewById(R.id.textViewUserID);
+        userIDEditText = (EditText) findViewById(R.id.editTextUserID);
+        loginButton = (Button) findViewById(R.id.buttonLogin);
+        manholeTextView = (TextView) findViewById(R.id.textViewManholeLocation);
+        manholeEditText = (EditText) findViewById(R.id.editTextManholeLocation);
         readButton = (Button) findViewById(R.id.buttonRead);
         saveButton = (Button) findViewById(R.id.buttonSave);
         emailButton = (Button) findViewById(R.id.buttonEmail);
-        //identifierText = (EditText) findViewById(R.id.identifierText);
-        //filenameView = (TextView) findViewById(R.id.filenameView);
         feedbackContainer = (ScrollView) findViewById(R.id.feedbackContainer);
         feedbackView = new TextView(this);
+        feedbackView.setTextSize(18);
+        feedbackView.setTextColor(Color.WHITE);
         feedbackContainer.addView(feedbackView);
+
         setUiEnabled(false);
+        setUiVisible(false);
+        loggedIn = false;
 
         filter = new IntentFilter();
         filter.addAction(ACTION_USB_PERMISSION);
@@ -216,15 +301,25 @@ public class MainActivity extends AppCompatActivity {
         //int result = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION);
         //if (result == PackageManager.PERMISSION_GRANTED) {Log.d("","granted");}
 
-        connect();
+        connectArduino();
 
         if (savedInstanceState != null) {
+            loggedIn = savedInstanceState.getBoolean("isUserLoggedIn");
+            userID = savedInstanceState.getString("userID");
+            manholeEditText.setText(savedInstanceState.getString("manholeTextEntered"));
             feedbackView.append(savedInstanceState.getCharSequence("feedbackViewText"));
             filenames = savedInstanceState.getStringArray("filenames");
             contents = savedInstanceState.getStringArray("contents");
             readButton.setEnabled(savedInstanceState.getBoolean("isReadButtonEnabled"));
             saveButton.setEnabled(savedInstanceState.getBoolean("isSaveButtonEnabled"));
             emailButton.setEnabled(savedInstanceState.getBoolean("isEmailButtonEnabled"));
+        }
+
+        if (loggedIn) {
+            setUiVisible(true);
+            userIDEditText.setVisibility(View.INVISIBLE);
+            userIDTextView.setText("User ID: " + userID);
+            loginButton.setText("LOG OUT");
         }
     }
 
@@ -233,6 +328,25 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         unregisterReceiver(broadcastReceiver);
+    }
+
+    /** show or don't show buttons */
+    public void setUiVisible(boolean bool) {
+        if (bool) {
+            manholeTextView.setVisibility(View.VISIBLE);
+            manholeEditText.setVisibility(View.VISIBLE);
+            readButton.setVisibility(Button.VISIBLE);
+            saveButton.setVisibility(Button.VISIBLE);
+            emailButton.setVisibility(Button.VISIBLE);
+            feedbackContainer.setVisibility(View.VISIBLE);
+        } else {
+            manholeTextView.setVisibility(View.INVISIBLE);
+            manholeEditText.setVisibility(View.INVISIBLE);
+            readButton.setVisibility(Button.INVISIBLE);
+            saveButton.setVisibility(Button.INVISIBLE);
+            emailButton.setVisibility(Button.INVISIBLE);
+            feedbackContainer.setVisibility(View.INVISIBLE);
+        }
     }
 
     /** enable or disable buttons */
@@ -247,7 +361,8 @@ public class MainActivity extends AppCompatActivity {
         final TextView ftv = tv;
         final CharSequence ftext = text;
         runOnUiThread(new Runnable() {
-            @Override public void run() {
+            @Override
+            public void run() {
                 ftv.append(ftext);
             }
         });
@@ -258,24 +373,39 @@ public class MainActivity extends AppCompatActivity {
         final Button b = button;
         final Boolean bool = choice;
         runOnUiThread(new Runnable() {
-            @Override public void run() {
+            @Override
+            public void run() {
                 b.setEnabled(bool);
             }
         });
     }
 
+    /** get timestamp and format*/
+    public String getDateCurrentTimeZone(long timestamp) {
+        try {
+            Calendar calendar = Calendar.getInstance();
+            TimeZone tz = TimeZone.getDefault();
+            calendar.setTimeInMillis(timestamp * 1000);
+            calendar.add(Calendar.MILLISECOND, tz.getOffset(calendar.getTimeInMillis()));
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            Date currenTimeZone = (Date) calendar.getTime();
+            return sdf.format(currenTimeZone);
+        } catch (Exception e) {
+        }
+        return "";
+    }
+
     /** connects arduino if found, triggers broadcastReceiver to open up a serial connection */
-    public void connect() {
+    public void connectArduino() {
         HashMap<String, UsbDevice> usbDevices = usbManager.getDeviceList();
         if (!usbDevices.isEmpty()) {
             boolean keep = true;
             for (Map.Entry<String, UsbDevice> entry : usbDevices.entrySet()) {
                 device = entry.getValue();
-                int deviceVID = device.getVendorId();
-                Toast.makeText(MainActivity.this, "Vendor ID: " + Integer.toString(deviceVID),Toast.LENGTH_LONG).show();
+                //int deviceVID = device.getVendorId();
+                //Toast.makeText(MainActivity.this, "Vendor ID: " + Integer.toString(deviceVID), Toast.LENGTH_LONG).show();
                 //if (deviceVID == 6790)//Arduino Vendor ID, not sure where to find
-                try
-                {
+                try {
                     PendingIntent pi = PendingIntent.getBroadcast(this, 0,
                             new Intent(ACTION_USB_PERMISSION), 0);
                     usbManager.requestPermission(device, pi);
@@ -289,53 +419,128 @@ public class MainActivity extends AppCompatActivity {
                 if (!keep)
                     break;
             }
+        } else {
+            Toast.makeText(MainActivity.this, "No devices found", Toast.LENGTH_LONG).show();
         }
-        else {
-            Toast.makeText(MainActivity.this, "No devices found",Toast.LENGTH_LONG).show();
+    }
+
+    /** Pull text from editTextLogin and log user in if non-empty */
+    public void onClickLogin(View view) {
+        if (!loggedIn) {
+            String textEntered = userIDEditText.getText().toString();
+            if (textEntered.equals("")) {
+                Toast.makeText(MainActivity.this, "Must enter User ID", Toast.LENGTH_LONG).show();
+            } else {
+                setUiVisible(true);
+                userIDTextView.setText("User ID: " + textEntered);
+                userIDEditText.setVisibility(View.INVISIBLE);
+                userID = textEntered;
+                loginButton.setText("LOG OUT");
+                loggedIn = true;
+            }
+        } else {
+            setUiVisible(false);
+            userIDTextView.setText("User ID: ");
+            userIDEditText.setVisibility(View.VISIBLE);
+            loginButton.setText("LOG IN");
+            userID = "";
+            loggedIn = false;
         }
     }
 
     /** create fake data string to manipulate w/o need for arduino */
-    public void onClickTestRead(View view) {
-        String data = testData;
-        if (data.length() > 0) {
-            String cue = data.substring(0, 1);
-            if (cue.equals(START_FILENAME)) {
+    /**
+     public void onClickTestRead(View view) {
+     String data = testData;
+     if (data.length() > 0) {
+     String cue = data.substring(0, 1);
+     if (cue.equals(START_FILENAME)) {
 
-                //split data into array of files,
-                String[] files = data.split(END_FILE);
+     //split data into array of files,
+     String[] files = data.split(END_FILE);
 
-                //ditch the end character
-                filenames = new String[files.length - 1];
-                contents = new String[files.length - 1];
-                tvAppend(feedbackView, Integer.toString(files.length - 1) + " files found:\n");
+     //ditch the end character
+     filenames = new String[files.length - 1];
+     contents = new String[files.length - 1];
+     tvAppend(feedbackView, Integer.toString(files.length - 1) + " files found:\n");
 
-                //split files into filenames and contents
-                for (int i = 0; i < files.length - 1; i++) {
-                    String[] fileAndContents = files[i].split(START_FILE);
-                    filenames[i] = fileAndContents[0].substring(1);
-                    contents[i] = fileAndContents[1];
-                    tvAppend(feedbackView, filenames[i] + "\n");
-                }
-                if (filenames.length > 0) {
-                    buttonEnable(saveButton, true);
-                }
-            } else {
-                tvAppend(feedbackView, "Received: " + data + "\n");
-            }
-        } else {
-            tvAppend(feedbackView, "\n");
-        }
-    }
+     //split files into filenames and contents
+     for (int i = 0; i < files.length - 1; i++) {
+     String[] fileAndContents = files[i].split(START_FILE);
+     filenames[i] = fileAndContents[0].substring(1);
+     contents[i] = fileAndContents[1];
+     tvAppend(feedbackView, filenames[i] + "\n");
+     }
+     if (filenames.length > 0) {
+     buttonEnable(saveButton, true);
+     }
+     } else {
+     tvAppend(feedbackView, "Received: " + data + "\n");
+     }
+     } else {
+     tvAppend(feedbackView, "\n");
+     }
+     }
+     */
 
     /** send cue to read file from arduino */
     public void onClickRead(View view) {
-        serialPort.write(INQUIRY.getBytes());
+        if (checkLocation()) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                return;
+            }
+
+            location = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
+            if (location == null) {
+                startLocationUpdates();
+            }
+
+            manholeLocation = manholeEditText.getText().toString();
+            if (manholeLocation.equals("")) {
+                Toast.makeText(MainActivity.this, "Must enter manhole location", Toast.LENGTH_LONG).show();
+
+            } else {
+
+                String locationString = "Location not detected";
+                if (location == null) {
+                    Toast.makeText(MainActivity.this, "Location not detected, wait and try again", Toast.LENGTH_LONG).show();
+                } else {
+                    locationString = location.getLatitude() + " " + location.getLongitude();
+
+                    //save metadata string
+                    metadataString = "User ID: \t" + userID +
+                            "\nRetrieval date: \t" + getDateCurrentTimeZone(System.currentTimeMillis() / 1000) +
+                            "\nManhole location: \t" + manholeLocation +
+                            "\nGPS coordinates: \t" + locationString +
+                            "\n";
+
+                    feedbackView.append("METADATA\n" + metadataString + "\n");
+                    serialPort.write(INQUIRY.getBytes());
+                    manholeLocation = "";
+                    manholeEditText.setText("");
+
+                }
+            }
+        }
+    }
+
+    /** updates contents of files with desired metadata */
+    public void updateMetadata() {
+        for (int i = 0; i < contents.length; i++) {
+            contents[i] = metadataString + contents[i];
+        }
     }
 
     /** Method to check whether external media available and writable. This is adapted from
      http://developer.android.com/guide/topics/data/data-storage.html#filesExternal */
-    private void checkExternalMedia(){
+    private void checkExternalMedia() {
         boolean mExternalStorageAvailable = false;
         boolean mExternalStorageWriteable = false;
         String state = Environment.getExternalStorageState();
@@ -357,8 +562,7 @@ public class MainActivity extends AppCompatActivity {
     /** Method to write ascii text characters to file on SD card. Note that you must add a
      WRITE_EXTERNAL_STORAGE permission to the manifest file or this method will throw
      a FileNotFound Exception because you won't have write permission. */
-    private void writeToSDFile(String[] filenames, String[] contents){
-
+    private void writeToSDFile(String[] filenames, String[] contents) {
         // Find the root of the external storage.
         // See http://developer.android.com/guide/topics/data/data-  storage.html#filesExternal
 
@@ -367,11 +571,11 @@ public class MainActivity extends AppCompatActivity {
 
         // See http://stackoverflow.com/questions/3551821/android-write-to-sd-card-folder
 
-        File dir = new File (root.getAbsolutePath() + "/data");
+        File dir = new File(root.getAbsolutePath() + "/" + FOLDER_NAME);
         dir.mkdirs();
 
         try {
-            for (int i=0; i<filenames.length; i++) {
+            for (int i = 0; i < filenames.length; i++) {
                 File file = new File(dir, filenames[i]);
                 FileOutputStream f = new FileOutputStream(file);
                 PrintWriter pw = new PrintWriter(f);
@@ -379,22 +583,23 @@ public class MainActivity extends AppCompatActivity {
                 pw.flush();
                 pw.close();
                 f.close();
-                feedbackView.append("File written to " + file + "\n");
-                emailButton.setEnabled(true);
+                feedbackView.append("File written to " + file + "\n" );
             }
+            feedbackView.append("\n");
+            emailButton.setEnabled(true);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
-            feedbackView.append("Check permissions in app settings\n");
+            Toast.makeText(MainActivity.this, "Check permissions in app settings", Toast.LENGTH_LONG).show();
         } catch (IOException e) {
             e.printStackTrace();
-            feedbackView.append("Unknown error\n");
+            Toast.makeText(MainActivity.this, "Unknown error", Toast.LENGTH_LONG).show();
         }
     }
 
     /** save files stored in global variables filenames[] and contents[] to SD card */
     public void onClickSave(View view) {
         checkExternalMedia();
-        writeToSDFile(filenames,contents);
+        writeToSDFile(filenames, contents);
     }
 
     /** give option to email files as attachments to EMAIL_RECIPIENT or upload them to cloud storage */
@@ -412,7 +617,7 @@ public class MainActivity extends AppCompatActivity {
         //convert from paths to Android friendly Parcelable Uri's
         for (String filename : filenames)
         {
-            File fileIn = new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/data", filename);
+            File fileIn = new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/"+FOLDER_NAME, filename);
             Uri u = FileProvider.getUriForFile(MainActivity.this,MainActivity.this.getApplicationContext().getPackageName() + ".provider", fileIn);
             uris.add(u);
         }
@@ -428,12 +633,131 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /** end connection if disconnected */
-    public void endConnection() {
+    public void endSerialConnection() {
         readButton.setEnabled(false);
         if (serialPort != null) {
             serialPort.close();
             Toast.makeText(MainActivity.this, "Serial connection closed", Toast.LENGTH_LONG).show();
         }
+    }
+
+
+    /** -----------------------------------LOCATION SERVICES--------------------------------*/
+
+
+    /** required to overwrite */
+    @Override
+    public void onConnected(Bundle bundle) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+
+        startLocationUpdates();
+
+        location = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
+
+        if(location == null){
+            startLocationUpdates();
+        }
+    }
+
+    protected void startLocationUpdates() {
+        // Create the location request
+        locationRequest = LocationRequest.create()
+                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+                .setInterval(UPDATE_INTERVAL)
+                .setFastestInterval(FASTEST_INTERVAL);
+        // Request location updates
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient,
+                locationRequest, this);
+        Log.d("reque", "--->>>>");
+    }
+
+    /** required to overwrite */
+    @Override
+    public void onConnectionSuspended(int i) {
+        Log.i("", "Connection Suspended");
+        googleApiClient.connect();
+    }
+
+    /** required to overwrite */
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+        Log.i("", "Connection failed. Error: " + connectionResult.getErrorCode());
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (googleApiClient != null) {
+            googleApiClient.connect();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (googleApiClient.isConnected()) {
+            googleApiClient.disconnect();
+        }
+    }
+
+    /** required to overwrite */
+    @Override
+    public void onLocationChanged(Location location) { }
+
+    private boolean checkLocation() {
+        if(!isLocationEnabled()) {
+            showAlert();
+        }
+        return isLocationEnabled();
+    }
+
+    /** create dialog to enable location usage */
+    private void showAlert() {
+        final AlertDialog.Builder dialog = new AlertDialog.Builder(this);
+        dialog.setTitle("Enable Location")
+                .setMessage("Location Services set to 'Off'.\nEnable Location in order to " +
+                        "write GPS coordinates to file")
+                .setPositiveButton("Location Settings", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface paramDialogInterface, int paramInt) {
+
+                        Intent myIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                        startActivity(myIntent);
+                    }
+                })
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface paramDialogInterface, int paramInt) {
+
+                    }
+                });
+        dialog.show();
+    }
+
+    /** check if location services are enabled */
+    private boolean isLocationEnabled() {
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
     }
 
 }

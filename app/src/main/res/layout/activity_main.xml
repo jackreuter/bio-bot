@@ -8,73 +8,108 @@
 
     <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
 
-        xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/black"
+        tools:layout_editor_absoluteX="288dp"
+        tools:layout_editor_absoluteY="0dp">
 
-        android:layout_height="match_parent">
+        <TextView
+            android:id="@+id/textViewUserID"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:textSize="18sp"
+            android:textColor="@color/white"
+            android:text="@string/user_id" />
 
+        <EditText
+            android:id="@+id/editTextUserID"
+            android:layout_width="wrap_content"
+            android:minWidth="5mm"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/textViewUserID"
+            android:layout_margin="5dp"
+            android:textColor="@color/white"
+            android:textSize="18sp"/>
+
+        <Button
+            android:id="@+id/buttonLogin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_margin="5dp"
+            android:layout_alignParentRight="true"
+            android:onClick="onClickLogin"
+            android:text="@string/log_in" />
+
+        <TextView
+            android:id="@+id/textViewManholeLocation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:layout_below="@id/textViewUserID"
+            android:text="@string/manhole_location"
+            android:textColor="@color/white"
+            android:textSize="18sp"/>
+
+        <EditText
+            android:id="@+id/editTextManholeLocation"
+            android:layout_width="wrap_content"
+            android:minWidth="5mm"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:layout_below="@id/textViewManholeLocation"
+            android:textColor="@color/white"
+            android:textSize="18sp"/>
+
+        <!--
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="TestRead"
+            android:layout_below="@+id/buttonLogin"
             android:id="@+id/buttonTestRead"
             android:onClick="onClickTestRead"/>
+            -->
 
         <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Read"
-            android:layout_below="@+id/buttonTestRead"
             android:id="@+id/buttonRead"
-            android:onClick="onClickRead"/>
-
-        <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Save"
-            android:layout_below="@+id/buttonRead"
+            android:layout_below="@+id/buttonLogin"
+            android:layout_margin="5dp"
+            android:layout_alignParentRight="true"
+            android:onClick="onClickRead"
+            android:text="@string/read" />
+
+        <Button
             android:id="@+id/buttonSave"
-            android:onClick="onClickSave"/>
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/buttonRead"
+            android:layout_margin="5dp"
+            android:layout_alignParentRight="true"
+            android:onClick="onClickSave"
+            android:text="@string/save" />
 
         <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Email"
-            android:layout_below="@+id/buttonSave"
             android:id="@+id/buttonEmail"
-            android:onClick="onClickEmail"/>
-
-<!--
-        <EditText
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/identifierText"
-            android:layout_below="@id/buttonEmail" />
+            android:layout_below="@+id/buttonSave"
+            android:layout_margin="5dp"
+            android:layout_alignParentRight="true"
+            android:onClick="onClickEmail"
+            android:text="@string/email" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="identifier"
-            android:id="@+id/identifierLabel"
-            android:layout_below="@id/identifierText"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/filenameView"
-            android:layout_below="@+id/identifierLabel" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="filename"
-            android:id="@+id/filenameLabel"
-            android:layout_below="@id/filenameView"/>
--->
         <ScrollView
+            android:id="@+id/feedbackContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/feedbackContainer"
-            android:layout_below="@+id/buttonEmail" />
+            android:layout_margin="5dp"
+            android:layout_below="@id/editTextManholeLocation" />
 
     </RelativeLayout>
 
