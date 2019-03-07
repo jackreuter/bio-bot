@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">BioBot</string>
-    <string name="user_id">User ID:</string>
-    <string name="manhole_location">Manhole Location:</string>
+    <string name="user_id">User ID: </string>
+    <string name="manhole_location">Manhole Location: </string>
     <string name="log_in">LOG IN</string>
     <string name="read">Read</string>
     <string name="save">Save</string>

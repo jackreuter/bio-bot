@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationManager;
@@ -39,6 +40,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
 import java.io.PrintWriter;
@@ -130,25 +132,26 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                         //ditch the end character
                         filenames = new String[files.length - 1];
                         contents = new String[files.length - 1];
-                        tvAppend(feedbackView, Integer.toString(files.length - 1) + " files found:\n");
+
+                        String feedback = Integer.toString(files.length - 1) + " files found:\n";
 
                         //split files into filenames and contents
                         for (int i = 0; i < files.length - 1; i++) {
                             String[] fileAndContents = files[i].split(START_FILE);
                             filenames[i] = fileAndContents[0].substring(1);
                             contents[i] = fileAndContents[1];
-                            tvAppend(feedbackView, filenames[i] + "\n");
+                            feedback += filenames[i] + "\n";
                         }
-                        tvAppend(feedbackView, "\n");
+                        tvAppendToFront(feedbackView, feedback + "\n");
                         if (filenames.length > 0) {
                             buttonEnable(saveButton, true);
                             updateMetadata();
                         }
                     } else {
-                        tvAppend(feedbackView, "Received: " + data + "\n");
+                        tvAppendToFront(feedbackView, "Received: " + data + "\n\n");
                     }
                 } else {
-                    tvAppend(feedbackView, "\n");
+                    //tvAppendToFront(feedbackView, "No data received\n");
                 }
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
@@ -231,6 +234,13 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             outState.putString("manholeTextEntered", "");
         }
 
+        String userIDTextEntered = userIDEditText.getText().toString();
+        if (userIDTextEntered != null) {
+            outState.putString("userIDTextEntered", manholeTextEntered);
+        } else {
+            outState.putString("userIDTextEntered", "");
+        }
+
         if (filenames != null) {
             outState.putStringArray("filenames", filenames);
         } else {
@@ -263,6 +273,9 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
         String[] permissions = {Manifest.permission.ACCESS_COARSE_LOCATION,
                 Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.INTERNET,
+                Manifest.permission.ACCESS_NETWORK_STATE,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE};
         requestPermissions(permissions, 1);
 
@@ -306,7 +319,8 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         if (savedInstanceState != null) {
             loggedIn = savedInstanceState.getBoolean("isUserLoggedIn");
             userID = savedInstanceState.getString("userID");
-            manholeEditText.setText(savedInstanceState.getString("manholeTextEntered"));
+            manholeEditText.setText(savedInstanceState.getString("manholeTextEntered"), TextView.BufferType.EDITABLE);
+            userIDEditText.setText(savedInstanceState.getString("userIDTextEntered"), TextView.BufferType.EDITABLE);
             feedbackView.append(savedInstanceState.getCharSequence("feedbackViewText"));
             filenames = savedInstanceState.getStringArray("filenames");
             contents = savedInstanceState.getStringArray("contents");
@@ -357,13 +371,14 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     }
 
     /** to print feedback during callback thread */
-    private void tvAppend(TextView tv, CharSequence text) {
+    private void tvAppendToFront(TextView tv, CharSequence text) {
         final TextView ftv = tv;
         final CharSequence ftext = text;
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                ftv.append(ftext);
+                ftv.setText(ftext + ftv.getText().toString());
+                //ftv.append(ftext);
             }
         });
     }
@@ -384,12 +399,12 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     public String getDateCurrentTimeZone(long timestamp) {
         try {
             Calendar calendar = Calendar.getInstance();
-            TimeZone tz = TimeZone.getDefault();
+            //TimeZone tz = TimeZone.getDefault();
             calendar.setTimeInMillis(timestamp * 1000);
-            calendar.add(Calendar.MILLISECOND, tz.getOffset(calendar.getTimeInMillis()));
+            //calendar.add(Calendar.MILLISECOND, tz.getOffset(calendar.getTimeInMillis()));
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            Date currenTimeZone = (Date) calendar.getTime();
-            return sdf.format(currenTimeZone);
+            Date currentTimeZone = (Date) calendar.getTime();
+            return sdf.format(currentTimeZone);
         } catch (Exception e) {
         }
         return "";
@@ -433,6 +448,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             } else {
                 setUiVisible(true);
                 userIDTextView.setText("User ID: " + textEntered);
+                tvAppendToFront(feedbackView, "----LOGGED IN AS: " + textEntered + "----\n\n\n");
                 userIDEditText.setVisibility(View.INVISIBLE);
                 userID = textEntered;
                 loginButton.setText("LOG OUT");
@@ -440,6 +456,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             }
         } else {
             setUiVisible(false);
+            tvAppendToFront(feedbackView, "----LOGGED OUT----\n\n");
             userIDTextView.setText("User ID: ");
             userIDEditText.setVisibility(View.VISIBLE);
             loginButton.setText("LOG IN");
@@ -462,23 +479,23 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
      //ditch the end character
      filenames = new String[files.length - 1];
      contents = new String[files.length - 1];
-     tvAppend(feedbackView, Integer.toString(files.length - 1) + " files found:\n");
+     tvAppendToFront(feedbackView, Integer.toString(files.length - 1) + " files found:\n");
 
      //split files into filenames and contents
      for (int i = 0; i < files.length - 1; i++) {
      String[] fileAndContents = files[i].split(START_FILE);
      filenames[i] = fileAndContents[0].substring(1);
      contents[i] = fileAndContents[1];
-     tvAppend(feedbackView, filenames[i] + "\n");
+     tvAppendToFront(feedbackView, filenames[i] + "\n");
      }
      if (filenames.length > 0) {
      buttonEnable(saveButton, true);
      }
      } else {
-     tvAppend(feedbackView, "Received: " + data + "\n");
+     tvAppendToFront(feedbackView, "Received: " + data + "\n");
      }
      } else {
-     tvAppend(feedbackView, "\n");
+     tvAppendToFront(feedbackView, "\n");
      }
      }
      */
@@ -487,13 +504,8 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     public void onClickRead(View view) {
         if (checkLocation()) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                // TODO: Consider calling
-                //    ActivityCompat#requestPermissions
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
+                String[] permissions = {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
+                requestPermissions(permissions, 1);
                 return;
             }
 
@@ -520,8 +532,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                             "\nManhole location: \t" + manholeLocation +
                             "\nGPS coordinates: \t" + locationString +
                             "\n";
-
-                    feedbackView.append("METADATA\n" + metadataString + "\n");
+                    tvAppendToFront(feedbackView, "METADATA\n" + metadataString + "\n");
                     serialPort.write(INQUIRY.getBytes());
                     manholeLocation = "";
                     manholeEditText.setText("");
@@ -575,6 +586,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         dir.mkdirs();
 
         try {
+            String feedback = "";
             for (int i = 0; i < filenames.length; i++) {
                 File file = new File(dir, filenames[i]);
                 FileOutputStream f = new FileOutputStream(file);
@@ -583,13 +595,15 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                 pw.flush();
                 pw.close();
                 f.close();
-                feedbackView.append("File written to " + file + "\n" );
+                feedback += "File written to " + file + "\n";
             }
-            feedbackView.append("\n");
+            tvAppendToFront(feedbackView, feedback + "\n");
             emailButton.setEnabled(true);
         } catch (FileNotFoundException e) {
+            String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
+            requestPermissions(permissions, 1);
             e.printStackTrace();
-            Toast.makeText(MainActivity.this, "Check permissions in app settings", Toast.LENGTH_LONG).show();
+            //Toast.makeText(MainActivity.this, "Check permissions in app settings", Toast.LENGTH_LONG).show();
         } catch (IOException e) {
             e.printStackTrace();
             Toast.makeText(MainActivity.this, "Unknown error", Toast.LENGTH_LONG).show();
@@ -609,7 +623,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         emailIntent.setType("text/plain");
         emailIntent.putExtra(android.content.Intent.EXTRA_EMAIL, EMAIL_RECIPIENT);
         emailIntent.putExtra(Intent.EXTRA_SUBJECT, EMAIL_SUBJECT);
-        emailIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        emailIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
         //has to be an ArrayList
         ArrayList<Uri> uris = new ArrayList<Uri>();
@@ -642,7 +656,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     }
 
 
-    /** -----------------------------------LOCATION SERVICES--------------------------------*/
+    /** -----------------------------------LOCATION SERVICES-------------------------------- */
 
 
     /** required to overwrite */
