@@ -1,5 +1,11 @@
 //FAKE TEENSY sending FAKE DATA
 
+/*   Reads SD card and sends data over serial
+ *   
+ *   IH 2/9/19
+ *   
+ */
+
 // unique ID for unit
 #define ID "001AA"
 
@@ -12,37 +18,31 @@
 #define inquiry '~' // 0x05
 #define identity '*' // request for identity
 
-int incomingByte = 0;  // for incoming serial data
+#define BLINK_DELAY 2000 // milliseconds
+
+const int SD_CS = 10; // pin assignment
+const int led = 13; 
+// https://forum.pjrc.com/threads/26412-How-to-remap-pins-so-that-the-T3-built-in-LED-isn-t-OR-d-with-the-SPI-SCK
+
+unsigned long lastOnTime;
 
 void setup() {
-  Serial.begin(9600); // opens serial port, sets data rate to 9600 bps
-  String input = "";
+    Serial.begin(9600); // baud rate is ignored for Teensy
+    // https://www.pjrc.com/teensy/td_serial.html
+    // it just sends everything at full USB rate - ok bc this is NOT
+    // a direct serial connection w/ another device, it's through USB
 }
 
-void loop() {
 
-  // reply only when you receive data:
-  if (Serial.available() > 0) {
-        if (Serial.available()) {
+void loop() {
+    if (Serial.available()) {
         int byteRead = Serial.read();
 
         switch (byteRead) {
             case inquiry: 
             {
-                //File folder = SD.open("/data/"); // apparently a directory is a special kind of file
-                //sendDirectory(folder);
-                Serial.write(start_filename);
-                Serial.write("190111_I.TXT");
-                Serial.write(start_file);
-                Serial.write("TONS OF TEXT FAKE DATA BLAH BLAH BLAH");
-                Serial.write(end_file);
-                Serial.write(start_filename);
-                Serial.write("190117_A.TXT");
-                Serial.write(start_file);
-                Serial.write("MORE FAKE TEXT IN A NEW FILE OF TEXT YAA");
-                Serial.write(end_file);
+                sendDirectory();
                 Serial.write(end_transmission);
-                //folder.close();
 
                 break;
             }
@@ -60,23 +60,22 @@ void loop() {
             }
         }
     }
-  }
-    /**
-    // read the incoming byte:
-    incomingByte = Serial.read();
-    char incomingChar = incomingByte;
-
-    //if character is $, designated trigger, send all data
-    if (incomingByte == 36) {
-      Serial.print("$file1<START>Here is a bunch of bullshit data, end character<BREAK>file2<START>bullshit data end character<BREAK>file3<START>thats all");
-
-    //otherwise say what you got
-    } else {
-      Serial.print("I received: ");
-      Serial.println(incomingChar);
-      Serial.println(incomingByte);
-    }
-  }
-  */
 }
+
+
+void sendFile(String filename, String contents) {
+    Serial.write(start_filename);
+    Serial.print(filename);
+    Serial.write(start_file);
+    Serial.print(contents);
+    Serial.write(end_file);
+    Serial.println();
+}
+
+
+void sendDirectory() {  // copied largely from the arduino example file
+    sendFile("190111_I.TXT","TONS OF TEXT FAKE DATA BLAH BLAH BLAH");
+    sendFile("190117_A.TXT","MORE FAKE DATA BLAH BLAH BLAHDI BLOO");
+}
+
 

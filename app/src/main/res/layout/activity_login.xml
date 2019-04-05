@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".LoginActivity">
+
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/background"
+        >
+
+        <TextView
+            android:id="@+id/loginTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/user_id"
+            android:textSize="@dimen/font_size_large"
+            android:textColor="@color/text_color"
+            android:layout_margin="15dp"
+            android:layout_centerHorizontal="true"
+            android:layout_above="@+id/editTextUserID"
+            />
+
+        <EditText
+            android:id="@+id/editTextUserID"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="@dimen/outer_margin"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:padding="@dimen/padding"
+            android:background="@color/white"
+            android:textSize="@dimen/font_size_large"
+            android:textColor="@color/text_color"
+            android:layout_centerHorizontal="true"
+            android:layout_above="@+id/buttonLogin"
+            />
+
+        <Button
+            android:id="@+id/buttonLogin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="15dp"
+            android:padding="@dimen/padding"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:onClick="onClickLogin"
+            android:background="@drawable/button"
+            android:textSize="@dimen/font_size_large"
+            android:text="@string/log_in"
+            android:textColor="@color/white"
+            />
+
+    </RelativeLayout>
+
+</android.support.constraint.ConstraintLayout>
