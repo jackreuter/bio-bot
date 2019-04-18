@@ -43,9 +43,9 @@ public class LoginActivity extends Activity {
         SharedPreferences pref = getSharedPreferences("MyPref",
                 Context.MODE_PRIVATE);
         if (pref.contains("user_id")) {
-            Intent mainActivityIntent = new Intent(LoginActivity.this, MainActivity.class);
-            mainActivityIntent.putExtra("user_id", pref.getString("user_id", ""));
-            startActivity(mainActivityIntent);
+            Intent manholeSelectionActivityIntent = new Intent(LoginActivity.this, ManholeSelectionActivity.class);
+            manholeSelectionActivityIntent.putExtra("user_id", pref.getString("user_id", ""));
+            startActivity(manholeSelectionActivityIntent);
         }
 
         loginButton = findViewById(R.id.buttonLogin);
@@ -69,9 +69,9 @@ public class LoginActivity extends Activity {
                 }
             }).start();
 
-            Intent mainActivityIntent = new Intent(LoginActivity.this, MainActivity.class);
-            mainActivityIntent.putExtra("user_id", textEntered);
-            startActivity(mainActivityIntent);
+            Intent manholeSelectionActivityIntent = new Intent(LoginActivity.this, ManholeSelectionActivity.class);
+            manholeSelectionActivityIntent.putExtra("user_id", textEntered);
+            startActivity(manholeSelectionActivityIntent);
         }
     }
 }

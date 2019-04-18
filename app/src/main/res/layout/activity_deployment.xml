@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".DeploymentActivity">
+
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/background"
+        >
+
+        <TextView
+            android:id="@+id/textViewUserID"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:layout_marginRight="@dimen/outer_margin"
+            android:layout_marginTop="@dimen/outer_margin"
+            android:layout_marginBottom="25dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/font_size_large"
+            android:textColor="@color/text_color"
+            />
+
+        <Button
+            android:id="@+id/buttonLogout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="@dimen/outer_margin"
+            android:layout_marginTop="@dimen/outer_margin"
+            android:layout_marginBottom="25dp"
+            android:padding="@dimen/padding"
+            android:text="@string/log_out"
+            android:textSize="@dimen/font_size_large"
+            android:textColor="@color/white"
+            android:onClick="onClickLogout"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentTop="true"
+            android:background="@drawable/button"
+            />
+
+        <TextView
+            android:id="@+id/textViewBoxID"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:textSize="@dimen/font_size_large"
+            android:textColor="@color/text_color"
+            android:text="@string/box_id"
+            android:layout_below="@+id/buttonLogout"
+            />
+
+        <EditText
+            android:id="@+id/editTextBoxID"
+            android:layout_width="match_parent"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:layout_marginRight="@dimen/outer_margin"
+            android:layout_marginBottom="@dimen/inner_margin"
+            android:padding="@dimen/padding"
+            android:layout_height="wrap_content"
+            android:background="@color/white"
+            android:textSize="@dimen/font_size_large"
+            android:textColor="@color/text_color"
+            android:layout_below="@id/textViewBoxID"
+            />
+
+        <TextView
+            android:id="@+id/textViewResetTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:textSize="@dimen/font_size_large"
+            android:textColor="@color/text_color"
+            android:text="@string/reset_time"
+            android:layout_below="@id/editTextBoxID"
+            />
+
+        <EditText
+            android:id="@+id/editTextResetTime"
+            android:layout_width="match_parent"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:layout_marginRight="@dimen/outer_margin"
+            android:layout_marginBottom="@dimen/inner_margin"
+            android:padding="@dimen/padding"
+            android:layout_height="wrap_content"
+            android:background="@color/white"
+            android:textSize="@dimen/font_size_large"
+            android:textColor="@color/text_color"
+            android:focusable="false"
+            android:layout_below="@id/textViewResetTime"
+            />
+
+        <TextView
+            android:id="@+id/textViewLightTurnedGreen"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:textSize="@dimen/font_size_large"
+            android:textColor="@color/text_color"
+            android:text="@string/light_turned_green"
+            android:layout_below="@id/editTextResetTime"
+            />
+
+        <EditText
+            android:id="@+id/editTextLightTurnedGreen"
+            android:layout_width="match_parent"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:layout_marginRight="@dimen/outer_margin"
+            android:layout_marginBottom="@dimen/inner_margin"
+            android:padding="@dimen/padding"
+            android:layout_height="wrap_content"
+            android:background="@color/white"
+            android:textSize="@dimen/font_size_large"
+            android:textColor="@color/text_color"
+            android:focusable="false"
+            android:layout_below="@id/textViewLightTurnedGreen"
+            />
+
+        <TextView
+            android:id="@+id/textViewNotes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:textSize="@dimen/font_size_large"
+            android:textColor="@color/text_color"
+            android:text="@string/notes"
+            android:layout_below="@+id/editTextLightTurnedGreen"
+            />
+
+        <EditText
+            android:id="@+id/editTextNotes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:layout_marginRight="@dimen/outer_margin"
+            android:padding="@dimen/padding"
+            android:textSize="@dimen/font_size_large"
+            android:textColor="@color/text_color"
+            android:background="@color/white"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:layout_below="@id/textViewNotes"
+            />
+
+        <Button
+            android:id="@+id/buttonLogInfo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_margin="25dp"
+            android:padding="@dimen/padding"
+            android:onClick="onClickLogInfo"
+            android:text="@string/log_info"
+            android:textColor="@color/white"
+            android:textSize="@dimen/font_size_large"
+            android:background="@drawable/button"
+            android:layout_below="@id/editTextNotes"
+
+            />
+
+    </RelativeLayout>
+
+</android.support.constraint.ConstraintLayout>

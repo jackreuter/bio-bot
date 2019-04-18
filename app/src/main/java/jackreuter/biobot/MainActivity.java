@@ -13,6 +13,7 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.view.View;
@@ -49,13 +50,15 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 
 public class MainActivity extends Activity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener {
 
-    //login
-    public final int LOGIN_REQUEST_CODE = 1;
-
-    //location services
+    // Google location services
     private GoogleApiClient googleApiClient;
     private LocationManager locationManager;
     private LocationRequest locationRequest;
@@ -63,10 +66,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     private long UPDATE_INTERVAL = 2 * 1000;  /* 10 secs */
     private long FASTEST_INTERVAL = 2000; /* 2 sec */
 
-    //arduinoUSB
-    public final String ACTION_USB_PERMISSION = "com.hariharan.arduinousb.USB_PERMISSION";
-
-    //file parsing
+    // file parsing
     public final String START_FILENAME = "!";
     public final String START_FILE = "\\$";
     public final String END_FILE = "\\^";
@@ -74,19 +74,23 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     public final String INQUIRY = "~";
     public final String ID = "*";
 
-    //must equal name field in provider_paths.xml
+    // must equal name field in provider_paths.xml
     public final String FOLDER_NAME = "data";
 
+    // UI
     Button logoutButton, readButton;
     TextView userIDTextView, manholeTextView, notesTextView;
     EditText manholeEditText, notesEditText;
 
+    // arduinoUSB
+    public final String ACTION_USB_PERMISSION = "com.hariharan.arduinousb.USB_PERMISSION";
     UsbManager usbManager;
     IntentFilter filter;
     UsbDevice device;
     UsbDeviceConnection connection;
     com.felhr.usbserial.UsbSerialDevice serialPort;
 
+    // global variables
     String[] filenames;
     String[] contents;
     String feedBackString;
