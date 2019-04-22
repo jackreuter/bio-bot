@@ -43,7 +43,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".MainActivity"
+            android:name=".RetrievalActivity"
             android:configChanges="orientation"
             android:screenOrientation="portrait">
             <intent-filter>

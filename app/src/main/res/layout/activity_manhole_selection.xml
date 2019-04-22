@@ -15,7 +15,33 @@
         >
 
         <TextView
-            android:id="@+id/loginTextView"
+            android:id="@+id/textViewUserID"
+            android:layout_marginBottom="25dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:layout_marginTop="@dimen/outer_margin"
+            android:textSize="@dimen/font_size_large"
+            android:textColor="@color/text_color"
+            />
+
+        <Button
+            android:id="@+id/buttonLogout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/outer_margin"
+            android:layout_marginRight="@dimen/outer_margin"
+            android:padding="@dimen/padding"
+            android:text="@string/log_out"
+            android:textSize="@dimen/font_size_large"
+            android:textColor="@color/white"
+            android:onClick="onClickLogout"
+            android:layout_alignParentRight="true"
+            android:background="@drawable/button"
+            />
+
+        <TextView
+            android:id="@+id/selectCityAndManholeTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/select_city"

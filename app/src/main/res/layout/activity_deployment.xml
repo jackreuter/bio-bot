@@ -122,6 +122,20 @@
             android:layout_below="@id/textViewLightTurnedGreen"
             />
 
+        <Spinner
+            android:id="@+id/lightBlinkingSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="@dimen/outer_margin"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"
+            android:background="@color/white"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@id/editTextLightTurnedGreen"
+            android:entries="@array/blinking_solid"
+            />
+
         <TextView
             android:id="@+id/textViewNotes"
             android:layout_width="wrap_content"
@@ -131,7 +145,7 @@
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
             android:text="@string/notes"
-            android:layout_below="@+id/editTextLightTurnedGreen"
+            android:layout_below="@+id/lightBlinkingSpinner"
             />
 
         <EditText

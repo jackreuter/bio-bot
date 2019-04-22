@@ -6,7 +6,6 @@ import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
@@ -17,7 +16,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
@@ -52,11 +50,10 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
 
-public class MainActivity extends Activity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener {
+public class RetrievalActivity extends Activity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener {
 
     // Google location services
     private GoogleApiClient googleApiClient;
@@ -65,6 +62,9 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     private Location location;
     private long UPDATE_INTERVAL = 2 * 1000;  /* 10 secs */
     private long FASTEST_INTERVAL = 2000; /* 2 sec */
+
+    // cloud firestore database
+    FirebaseFirestore db;
 
     // file parsing
     public final String START_FILENAME = "!";
@@ -79,8 +79,8 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
     // UI
     Button logoutButton, readButton;
-    TextView userIDTextView, manholeTextView, notesTextView;
-    EditText manholeEditText, notesEditText;
+    TextView userIDTextView, deploymentLogTextView, notesTextView;
+    EditText notesEditText;
 
     // arduinoUSB
     public final String ACTION_USB_PERMISSION = "com.hariharan.arduinousb.USB_PERMISSION";
@@ -95,6 +95,9 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     String[] contents;
     String feedBackString;
     String userID;
+    String cityID;
+    String manholeID;
+    String deploymentDate;
     Boolean transmissionEnded;
     Boolean serialConnectionOpen;
 
@@ -164,17 +167,17 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                             serialPort.setParity(UsbSerialInterface.PARITY_NONE);
                             serialPort.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
                             serialPort.read(mCallback); //
-                            Toast.makeText(MainActivity.this, "Serial connection opened", Toast.LENGTH_LONG).show();
+                            Toast.makeText(RetrievalActivity.this, "Serial connection opened", Toast.LENGTH_LONG).show();
                             serialConnectionOpen = true;
 
                         } else {
-                            Toast.makeText(MainActivity.this, "Port not open", Toast.LENGTH_LONG).show();
+                            Toast.makeText(RetrievalActivity.this, "Port not open", Toast.LENGTH_LONG).show();
                         }
                     } else {
-                        Toast.makeText(MainActivity.this, "Port is null", Toast.LENGTH_LONG).show();
+                        Toast.makeText(RetrievalActivity.this, "Port is null", Toast.LENGTH_LONG).show();
                     }
                 } else {
-                    Toast.makeText(MainActivity.this, "Permission not granted", Toast.LENGTH_LONG).show();
+                    Toast.makeText(RetrievalActivity.this, "Permission not granted", Toast.LENGTH_LONG).show();
                 }
             } else if (intent.getAction().equals(UsbManager.ACTION_USB_DEVICE_ATTACHED)) {
                 connectArduino();
@@ -189,13 +192,6 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-
-        String manholeTextEntered = manholeEditText.getText().toString();
-        if (manholeTextEntered != null) {
-            outState.putString("manholeTextEntered", manholeTextEntered);
-        } else {
-            outState.putString("manholeTextEntered", "");
-        }
 
         String notesTextEntered = notesEditText.getText().toString();
         if (notesTextEntered != null) {
@@ -230,7 +226,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         //Remove notification bar
         //this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_retrieval);
 
         //TO COMMUNICATE WITH ARDUINO
         usbManager = (UsbManager) getSystemService(this.USB_SERVICE);
@@ -244,25 +240,48 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         checkLocation(); //check whether location service is enable or not in your  phone
 
-        //TRY TO CONNECT
-        connectArduino();
+        // CLOUD FIRESTORE DATABASE SYNC
+        db = FirebaseFirestore.getInstance();
 
         //CREATE UI
         logoutButton = (Button) findViewById(R.id.buttonLogout);
         userIDTextView = (TextView) findViewById(R.id.textViewUserID);
-        manholeTextView = (TextView) findViewById(R.id.textViewManholeLocation);
-        manholeEditText = (EditText) findViewById(R.id.editTextManholeLocation);
+        deploymentLogTextView = (TextView) findViewById(R.id.textViewDeploymentLog);
         notesTextView = (TextView) findViewById(R.id.textViewNotes);
         notesEditText = (EditText) findViewById(R.id.editTextNotes);
         readButton = (Button) findViewById(R.id.buttonRead);
 
         Intent intent = getIntent();
         userID = intent.getStringExtra("user_id");
+        cityID = intent.getStringExtra("city_id");
+        manholeID = intent.getStringExtra("manhole_id");
+        deploymentDate = intent.getStringExtra("deployment_date");
         userIDTextView.setText("Hi " + userID + "!");
+
+        Log.d("info my guy", cityID + " " + manholeID + " " + deploymentDate);
+        db.collection("cities")
+                .document(cityID)
+                .collection("manholes")
+                .document(manholeID)
+                .collection("deployments")
+                .document(deploymentDate)
+                .get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                        if (task.isSuccessful()) {
+                            DocumentSnapshot document = task.getResult();
+                            Map<String, Object> deploymentData = document.getData();
+                            deploymentLogTextView.append("Device deployed on: " + document.getId()+"\n\n");
+                            for (String key : deploymentData.keySet()) {
+                                deploymentLogTextView.append(key + ":\t" + deploymentData.get(key) + "\n");
+                            }
+                        }
+                    }
+                });
+
 
         //IF SCREEN ROTATED OR APP PAUSED FOR SOME REASON
         if (savedInstanceState != null) {
-            manholeEditText.setText(savedInstanceState.getString("manholeTextEntered"), TextView.BufferType.EDITABLE);
             notesEditText.setText(savedInstanceState.getString("notesTextEntered"), TextView.BufferType.EDITABLE);
             filenames = savedInstanceState.getStringArray("filenames");
             contents = savedInstanceState.getStringArray("contents");
@@ -285,6 +304,9 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
         registerReceiver(broadcastReceiver, filter);
 
+        //TRY TO CONNECT TO ARDUINO
+        connectArduino();
+
         //CONNECT TO LOCATION SERVICES
         if (googleApiClient != null) {
             googleApiClient.connect();
@@ -298,6 +320,9 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         //UNREGISTER BROADCAST RECEIVER
         unregisterReceiver(broadcastReceiver);
 
+        //DISCONNECT FROM ARDUINO
+        endSerialConnection();
+
         //DISCONNECT FROM LOCATION SERVICES
         if (googleApiClient.isConnected()) {
             googleApiClient.disconnect();
@@ -307,7 +332,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     /** send cue to read file from arduino */
     public void onClickRead(View view) {
         if (!serialConnectionOpen) {
-            Toast.makeText(MainActivity.this, "Serial connection not open. Reconnect Teensy", Toast.LENGTH_LONG).show();
+            Toast.makeText(RetrievalActivity.this, "Serial connection not open. Reconnect Teensy", Toast.LENGTH_LONG).show();
         } else {
             transmissionEnded = false;
             if (checkLocation()) {
@@ -322,35 +347,28 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                     startLocationUpdates();
                 }
 
-                String manholeLocation = manholeEditText.getText().toString();
-                if (manholeLocation.equals("")) {
-                    Toast.makeText(MainActivity.this, "Must enter manhole location", Toast.LENGTH_LONG).show();
-
+                String locationString = "Location not detected";
+                if (location == null) {
+                    Toast.makeText(RetrievalActivity.this, "Location not detected, wait and try again", Toast.LENGTH_LONG).show();
                 } else {
+                    locationString = location.getLatitude() + " " + location.getLongitude();
+                    /**
+                    //save metadata string
+                    String metadataString = "User ID: \t" + userID +
+                            "\nRetrieval date: \t" + getDateCurrentTimeZone(System.currentTimeMillis() / 1000) +
+                            "\nManhole location: \t" + manholeLocation +
+                            "\nGPS coordinates: \t" + locationString +
+                            "\nNotes: \t" + notesEditText.getText().toString() +
+                            "\n";
+                     */
 
-                    String locationString = "Location not detected";
-                    if (location == null) {
-                        Toast.makeText(MainActivity.this, "Location not detected, wait and try again", Toast.LENGTH_LONG).show();
-                    } else {
-                        locationString = location.getLatitude() + " " + location.getLongitude();
+                    //feedBackString += metadataString + "\n";
+                    serialPort.write(INQUIRY.getBytes());
+                    notesEditText.getText().clear();
 
-                        //save metadata string
-                        String metadataString = "User ID: \t" + userID +
-                                "\nRetrieval date: \t" + getDateCurrentTimeZone(System.currentTimeMillis() / 1000) +
-                                "\nManhole location: \t" + manholeLocation +
-                                "\nGPS coordinates: \t" + locationString +
-                                "\nNotes: \t" + notesEditText.getText().toString() +
-                                "\n";
-
-                        feedBackString += metadataString + "\n";
-                        serialPort.write(INQUIRY.getBytes());
-                        manholeEditText.getText().clear();
-                        notesEditText.getText().clear();
-
-                        while (!transmissionEnded) { }
-                        appendMetadataToFileContents(metadataString);
-                        save();
-                    }
+                    while (!transmissionEnded) { }
+                    //appendMetadataToFileContents(metadataString);
+                    save();
                 }
             }
         }
@@ -363,25 +381,18 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         String tmpfeedBackString = feedBackString;
         feedBackString = "";
 
-        Intent emailActivityIntent = new Intent(MainActivity.this, EmailActivity.class);
+        Intent emailActivityIntent = new Intent(RetrievalActivity.this, EmailActivity.class);
         emailActivityIntent.putExtra("filenames", filenames); //Optional parameters
         emailActivityIntent.putExtra("feedback", tmpfeedBackString); //Optional parameters
-        MainActivity.this.startActivity(emailActivityIntent);
+        RetrievalActivity.this.startActivity(emailActivityIntent);
     }
 
     /** log out user and send back to login screen */
     public void onClickLogout(View view) {
-        new Thread(new Runnable() {
-            public void run() {
-                // running shared preference editor on separate thread to avoid issues with UI thread (manholeEditText was uneditable)
-                SharedPreferences pref = getApplicationContext().getSharedPreferences("MyPref", Context.MODE_PRIVATE); // 0 - for private mode
-                SharedPreferences.Editor editor = pref.edit();
-                editor.remove("user_id");
-                editor.commit();
-            }
-        }).start();
-
-        finish();
+        Intent logoutIntent = new Intent(RetrievalActivity.this, LoginActivity.class);
+        logoutIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        logoutIntent.putExtra("logout", true);
+        startActivity(logoutIntent);
     }
 
     /** get timestamp and format*/
@@ -407,7 +418,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             for (Map.Entry<String, UsbDevice> entry : usbDevices.entrySet()) {
                 device = entry.getValue();
                 //int deviceVID = device.getVendorId();
-                //Toast.makeText(MainActivity.this, "Vendor ID: " + Integer.toString(deviceVID), Toast.LENGTH_LONG).show();
+                //Toast.makeText(RetrievalActivity.this, "Vendor ID: " + Integer.toString(deviceVID), Toast.LENGTH_LONG).show();
                 //if (deviceVID == 6790)//Arduino Vendor ID, not sure where to find
                 try {
                     PendingIntent pi = PendingIntent.getBroadcast(this, 0,
@@ -424,7 +435,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                     break;
             }
         } else {
-            Toast.makeText(MainActivity.this, "No devices found", Toast.LENGTH_LONG).show();
+            Toast.makeText(RetrievalActivity.this, "No devices found", Toast.LENGTH_LONG).show();
         }
     }
 
@@ -488,10 +499,10 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
             requestPermissions(permissions, 1);
             e.printStackTrace();
-            //Toast.makeText(MainActivity.this, "Check permissions in app settings", Toast.LENGTH_LONG).show();
+            //Toast.makeText(RetrievalActivity.this, "Check permissions in app settings", Toast.LENGTH_LONG).show();
         } catch (IOException e) {
             e.printStackTrace();
-            Toast.makeText(MainActivity.this, "Unknown error", Toast.LENGTH_LONG).show();
+            Toast.makeText(RetrievalActivity.this, "Unknown error", Toast.LENGTH_LONG).show();
         }
     }
 
@@ -500,17 +511,10 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         feedBackString = "";
         if (serialPort != null && serialConnectionOpen) {
             serialPort.close();
-            Toast.makeText(MainActivity.this, "Serial connection closed", Toast.LENGTH_LONG).show();
+            Toast.makeText(RetrievalActivity.this, "Serial connection closed", Toast.LENGTH_LONG).show();
         }
         serialConnectionOpen = false;
     }
-
-    /** logout if back button pressed */
-    @Override
-    public void onBackPressed() {
-        logoutButton.performClick();
-    }
-
 
     /** -----------------------------------LOCATION SERVICES-------------------------------- */
 

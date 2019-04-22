@@ -7,6 +7,7 @@ import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
@@ -18,7 +19,9 @@ import android.os.Bundle;
 import android.text.InputType;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
@@ -27,9 +30,13 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import org.w3c.dom.Text;
 
@@ -45,6 +52,7 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
     EditText editTextBoxID;
     EditText editTextResetTime;
     EditText editTextLightTurnedGreen;
+    Spinner lightBlinkingSpinner;
     EditText editTextNotes;
 
     // cloud firestore database
@@ -62,6 +70,9 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
     String userID;
     String cityID;
     String manholeID;
+    String lightBlinkingString;
+
+    // shared preference to store login
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,6 +93,7 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
         editTextBoxID = (EditText) findViewById(R.id.editTextBoxID);
         editTextResetTime = (EditText) findViewById(R.id.editTextResetTime);
         editTextLightTurnedGreen = (EditText) findViewById(R.id.editTextLightTurnedGreen);
+        lightBlinkingSpinner = (Spinner) findViewById(R.id.lightBlinkingSpinner);
         editTextNotes = (EditText) findViewById(R.id.editTextNotes);
 
         editTextResetTime.setInputType(InputType.TYPE_NULL);
@@ -141,6 +153,18 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
             }
         });
 
+        // handle spinner selections
+        lightBlinkingSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+                lightBlinkingString = parentView.getItemAtPosition(position).toString();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parentView) { }
+
+        });
+
     }
 
     @Override
@@ -175,6 +199,7 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
                 editTextBoxID.getText().toString(),
                 editTextResetTime.getText().toString(),
                 editTextLightTurnedGreen.getText().toString(),
+                lightBlinkingString,
                 editTextNotes.getText().toString()
         );
 
@@ -217,6 +242,13 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
         } catch (Exception e) {
         }
         return "";
+    }
+
+    public void onClickLogout(View view) {
+        Intent logoutIntent = new Intent(DeploymentActivity.this, LoginActivity.class);
+        logoutIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        logoutIntent.putExtra("logout", true);
+        startActivity(logoutIntent);
     }
 
     /** -----------------------------------LOCATION SERVICES-------------------------------- */

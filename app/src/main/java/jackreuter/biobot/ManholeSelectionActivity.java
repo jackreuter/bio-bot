@@ -3,29 +3,32 @@ package jackreuter.biobot;
 import android.app.Activity;
 import android.content.Intent;
 import android.support.annotation.NonNull;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collections;
+import java.util.Map;
 
 public class ManholeSelectionActivity extends Activity {
 
     // Cloud Firestore database
     FirebaseFirestore db;
 
-    // Dropdown selection menus
+    // UI elements
+    TextView userIDTextView;
     Spinner citySpinner;
     Spinner manholeSpinner;
     ArrayAdapter<String> citySpinnerAdapter;
@@ -35,6 +38,8 @@ public class ManholeSelectionActivity extends Activity {
     String cityID;
     String manholeID;
     String userID;
+    String deploymentDate;
+    final int DEPLOYMENT_LOG_SIZE = 7;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,6 +47,7 @@ public class ManholeSelectionActivity extends Activity {
         setContentView(R.layout.activity_manhole_selection);
 
         // create UI
+        userIDTextView = (TextView) findViewById(R.id.textViewUserID);
         citySpinner = (Spinner) findViewById(R.id.city_spinner);
         manholeSpinner = (Spinner) findViewById(R.id.manhole_spinner);
         citySpinnerAdapter = new ArrayAdapter<String>(this, R.layout.spinner_item, new ArrayList<String>());
@@ -49,6 +55,7 @@ public class ManholeSelectionActivity extends Activity {
 
         Intent intent = getIntent();
         userID = intent.getStringExtra("user_id");
+        userIDTextView.setText("Hi " + userID + "!");
 
         // CLOUD FIRESTORE DATABASE SYNC
         db = FirebaseFirestore.getInstance();
@@ -80,7 +87,8 @@ public class ManholeSelectionActivity extends Activity {
         citySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-                // populate manhole spinner
+                // clear and populate manhole spinner
+                manholeSpinnerAdapter.clear();
                 cityID = parentView.getItemAtPosition(position).toString();
                 db.collection("cities")
                         .document(cityID)
@@ -95,7 +103,6 @@ public class ManholeSelectionActivity extends Activity {
                                         manholeSpinnerAdapter.notifyDataSetChanged();
                                     }
                                 } else {
-                                    //Log.w("data ayy", "Error getting documents.", task.getException());
                                 }
                             }
                         });
@@ -124,11 +131,18 @@ public class ManholeSelectionActivity extends Activity {
                             @Override
                             public void onComplete(@NonNull Task<QuerySnapshot> task) {
                                 if (task.isSuccessful()) {
+                                    ArrayList<String> deploymentDates = new ArrayList<String>();
                                     for (QueryDocumentSnapshot document : task.getResult()) {
-                                        Log.d("ayy", "deployment "+document.getId());
+                                        deploymentDates.add(document.getId());
+                                    }
+                                    if (deploymentDates.size() > 0) {
+                                        Collections.sort(deploymentDates);
+                                        Collections.reverse(deploymentDates);
+                                        deploymentDate = deploymentDates.get(0);
+                                    } else {
+                                        deploymentDate = "";
                                     }
                                 } else {
-                                    //Log.w("data ayy", "Error getting documents.", task.getException());
                                 }
                             }
                         });
@@ -142,15 +156,57 @@ public class ManholeSelectionActivity extends Activity {
 
         });
 
-
-
     }
 
     public void onClickContinue(View view) {
-        Intent deploymentActivityIntent = new Intent(ManholeSelectionActivity.this, DeploymentActivity.class);
-        deploymentActivityIntent.putExtra("user_id", userID);
-        deploymentActivityIntent.putExtra("city_id", cityID);
-        deploymentActivityIntent.putExtra("manhole_id", manholeID);
-        startActivity(deploymentActivityIntent);
+        if (deploymentDate.equals("")) {
+            Intent deploymentActivityIntent = new Intent(ManholeSelectionActivity.this, DeploymentActivity.class);
+            deploymentActivityIntent.putExtra("user_id", userID);
+            deploymentActivityIntent.putExtra("city_id", cityID);
+            deploymentActivityIntent.putExtra("manhole_id", manholeID);
+            startActivity(deploymentActivityIntent);
+
+        } else {
+            db.collection("cities")
+                    .document(cityID)
+                    .collection("manholes")
+                    .document(manholeID)
+                    .collection("deployments")
+                    .document(deploymentDate)
+                    .get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                @Override
+                public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                    if (task.isSuccessful()) {
+                        DocumentSnapshot document = task.getResult();
+                        Map<String, Object> deploymentData = document.getData();
+
+                        // if most recent deployment has not been retrieved then start retrieval activity
+                        if (deploymentData.size() == DEPLOYMENT_LOG_SIZE) {
+                            Intent retrievalActivityIntent = new Intent(ManholeSelectionActivity.this, RetrievalActivity.class);
+                            retrievalActivityIntent.putExtra("user_id", userID);
+                            retrievalActivityIntent.putExtra("city_id", cityID);
+                            retrievalActivityIntent.putExtra("manhole_id", manholeID);
+                            retrievalActivityIntent.putExtra("deployment_date", deploymentDate);
+                            startActivity(retrievalActivityIntent);
+                        } else {
+                            Intent deploymentActivityIntent = new Intent(ManholeSelectionActivity.this, DeploymentActivity.class);
+                            deploymentActivityIntent.putExtra("user_id", userID);
+                            deploymentActivityIntent.putExtra("city_id", cityID);
+                            deploymentActivityIntent.putExtra("manhole_id", manholeID);
+                            startActivity(deploymentActivityIntent);
+                        }
+                    } else {
+                    }
+                }
+            });
+        }
+
+    }
+
+    public void onClickLogout(View view) {
+        Intent logoutIntent = new Intent(ManholeSelectionActivity.this, LoginActivity.class);
+        logoutIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        logoutIntent.putExtra("logout", true);
+        startActivity(logoutIntent);
     }
 }

@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".RetrievalActivity">
 
     <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
@@ -15,12 +15,12 @@
 
         <TextView
             android:id="@+id/textViewUserID"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:layout_marginRight="@dimen/outer_margin"
+            android:layout_marginTop="@dimen/outer_margin"
             android:layout_marginBottom="25dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="@dimen/outer_margin"
-            android:layout_marginRight="@dimen/outer_margin"
-            android:layout_above="@+id/textViewManholeLocation"
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
             />
@@ -30,6 +30,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginRight="@dimen/outer_margin"
+            android:layout_marginTop="@dimen/outer_margin"
             android:layout_marginBottom="25dp"
             android:padding="@dimen/padding"
             android:text="@string/log_out"
@@ -37,35 +38,28 @@
             android:textColor="@color/white"
             android:onClick="onClickLogout"
             android:layout_alignParentRight="true"
-            android:layout_above="@+id/textViewManholeLocation"
+            android:layout_alignParentTop="true"
             android:background="@drawable/button"
             />
 
-        <TextView
-            android:id="@+id/textViewManholeLocation"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_marginLeft="@dimen/outer_margin"
-            android:textSize="@dimen/font_size_large"
-            android:textColor="@color/text_color"
-            android:text="@string/manhole_location"
-            android:layout_above="@+id/editTextManholeLocation"
-            />
-
-        <EditText
-            android:id="@+id/editTextManholeLocation"
+        <ScrollView
             android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:layout_marginLeft="@dimen/outer_margin"
             android:layout_marginRight="@dimen/outer_margin"
-            android:layout_marginBottom="@dimen/inner_margin"
-            android:padding="@dimen/padding"
-            android:layout_height="wrap_content"
-            android:background="@color/white"
-            android:textSize="@dimen/font_size_large"
-            android:textColor="@color/text_color"
+            android:layout_below="@+id/buttonLogout"
             android:layout_above="@+id/textViewNotes"
-            />
+            android:background="@color/shadow"
+            >
+            <TextView
+                android:id="@+id/textViewDeploymentLog"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:textColor="@color/text_color"
+                android:textSize="@dimen/font_size_small"
+                android:padding="@dimen/padding"
+                />
+        </ScrollView>
 
         <TextView
             android:id="@+id/textViewNotes"
@@ -73,6 +67,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
             android:layout_marginLeft="@dimen/outer_margin"
+            android:layout_marginTop="@dimen/inner_margin"
             android:layout_above="@+id/editTextNotes"
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
@@ -89,17 +84,17 @@
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
             android:background="@color/white"
-            android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true"
+            android:layout_above="@+id/buttonRead"
             />
 
         <Button
             android:id="@+id/buttonRead"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@id/editTextNotes"
             android:layout_centerHorizontal="true"
-            android:layout_margin="25dp"
+            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="@dimen/outer_margin"
+            android:layout_marginTop="@dimen/inner_margin"
             android:padding="@dimen/padding"
             android:onClick="onClickRead"
             android:text="@string/read"
