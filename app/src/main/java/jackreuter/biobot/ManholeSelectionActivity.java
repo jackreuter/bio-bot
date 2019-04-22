@@ -10,7 +10,10 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.google.android.gms.common.util.CollectionUtils;
+import com.google.android.gms.common.util.MapUtils;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -52,6 +55,10 @@ public class ManholeSelectionActivity extends Activity {
         manholeSpinner = (Spinner) findViewById(R.id.manhole_spinner);
         citySpinnerAdapter = new ArrayAdapter<String>(this, R.layout.spinner_item, new ArrayList<String>());
         manholeSpinnerAdapter = new ArrayAdapter<String>(this, R.layout.spinner_item, new ArrayList<String>());
+        citySpinnerAdapter.setDropDownViewResource(R.layout.spinner_item);
+        citySpinner.setAdapter(citySpinnerAdapter);
+        manholeSpinnerAdapter.setDropDownViewResource(R.layout.spinner_item);
+        manholeSpinner.setAdapter(manholeSpinnerAdapter);
 
         Intent intent = getIntent();
         userID = intent.getStringExtra("user_id");
@@ -61,12 +68,6 @@ public class ManholeSelectionActivity extends Activity {
         db = FirebaseFirestore.getInstance();
 
         // populate city spinner
-        citySpinnerAdapter.setDropDownViewResource(R.layout.spinner_item);
-        citySpinner.setAdapter(citySpinnerAdapter);
-
-        manholeSpinnerAdapter.setDropDownViewResource(R.layout.spinner_item);
-        manholeSpinner.setAdapter(manholeSpinnerAdapter);
-
         db.collection("cities")
                 .get()
                 .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
@@ -173,15 +174,15 @@ public class ManholeSelectionActivity extends Activity {
                     .document(manholeID)
                     .collection("deployments")
                     .document(deploymentDate)
+                    .collection("retrieval log")
+                    .document("data")
                     .get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
                 @Override
                 public void onComplete(@NonNull Task<DocumentSnapshot> task) {
                     if (task.isSuccessful()) {
                         DocumentSnapshot document = task.getResult();
-                        Map<String, Object> deploymentData = document.getData();
-
                         // if most recent deployment has not been retrieved then start retrieval activity
-                        if (deploymentData.size() == DEPLOYMENT_LOG_SIZE) {
+                        if (document.getData() == null) {
                             Intent retrievalActivityIntent = new Intent(ManholeSelectionActivity.this, RetrievalActivity.class);
                             retrievalActivityIntent.putExtra("user_id", userID);
                             retrievalActivityIntent.putExtra("city_id", cityID);
@@ -200,7 +201,6 @@ public class ManholeSelectionActivity extends Activity {
                 }
             });
         }
-
     }
 
     public void onClickLogout(View view) {

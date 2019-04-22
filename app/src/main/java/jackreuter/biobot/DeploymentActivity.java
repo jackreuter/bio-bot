@@ -20,6 +20,7 @@ import android.text.InputType;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -38,9 +39,12 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import org.w3c.dom.Document;
 import org.w3c.dom.Text;
 
+import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -52,7 +56,8 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
     EditText editTextBoxID;
     EditText editTextResetTime;
     EditText editTextLightTurnedGreen;
-    Spinner lightBlinkingSpinner;
+    Spinner lightStatusSpinner;
+    ArrayAdapter<String> lightStatusSpinnerAdapter;
     EditText editTextNotes;
 
     // cloud firestore database
@@ -70,7 +75,7 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
     String userID;
     String cityID;
     String manholeID;
-    String lightBlinkingString;
+    String lightStatusString;
 
     // shared preference to store login
 
@@ -93,8 +98,15 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
         editTextBoxID = (EditText) findViewById(R.id.editTextBoxID);
         editTextResetTime = (EditText) findViewById(R.id.editTextResetTime);
         editTextLightTurnedGreen = (EditText) findViewById(R.id.editTextLightTurnedGreen);
-        lightBlinkingSpinner = (Spinner) findViewById(R.id.lightBlinkingSpinner);
         editTextNotes = (EditText) findViewById(R.id.editTextNotes);
+
+        ArrayList<String> lightStatusOptions = new ArrayList();
+        lightStatusOptions.add("Blinking");
+        lightStatusOptions.add("Solid");
+        lightStatusSpinner = (Spinner) findViewById(R.id.lightStatusSpinner);
+        lightStatusSpinnerAdapter = new ArrayAdapter<String>(this, R.layout.spinner_item, lightStatusOptions);
+        lightStatusSpinnerAdapter.setDropDownViewResource(R.layout.spinner_item);
+        lightStatusSpinner.setAdapter(lightStatusSpinnerAdapter);
 
         editTextResetTime.setInputType(InputType.TYPE_NULL);
         editTextLightTurnedGreen.setInputType(InputType.TYPE_NULL);
@@ -154,10 +166,10 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
         });
 
         // handle spinner selections
-        lightBlinkingSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        lightStatusSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-                lightBlinkingString = parentView.getItemAtPosition(position).toString();
+                lightStatusString = parentView.getItemAtPosition(position).toString();
             }
 
             @Override
@@ -199,17 +211,34 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
                 editTextBoxID.getText().toString(),
                 editTextResetTime.getText().toString(),
                 editTextLightTurnedGreen.getText().toString(),
-                lightBlinkingString,
+                lightStatusString,
                 editTextNotes.getText().toString()
         );
 
+        String timeStamp = getDateCurrentTimeZone(System.currentTimeMillis() / 1000);
+        Map<String, String> deployment = new HashMap<>();
+        deployment.put("date", timeStamp);
+
         db = FirebaseFirestore.getInstance();
+
+        // create deployment
         db.collection("cities")
                 .document(cityID)
                 .collection("manholes")
                 .document(manholeID)
                 .collection("deployments")
-                .document(getDateCurrentTimeZone(System.currentTimeMillis() / 1000))
+                .document(timeStamp)
+                .set(deployment);
+
+        // log deployment information
+        db.collection("cities")
+                .document(cityID)
+                .collection("manholes")
+                .document(manholeID)
+                .collection("deployments")
+                .document(timeStamp)
+                .collection("deployment log")
+                .document("data")
                 .set(log)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
@@ -225,7 +254,7 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
                 });
 
 
-        Toast.makeText(this, "Deployment information sent to database", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Deployment log sent to database", Toast.LENGTH_SHORT).show();
         finish();
     }
 

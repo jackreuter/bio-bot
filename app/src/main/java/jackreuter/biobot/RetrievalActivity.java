@@ -10,7 +10,6 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.os.Environment;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
@@ -22,17 +21,12 @@ import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.widget.Button;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.File;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.io.PrintWriter;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -49,6 +43,8 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -258,22 +254,24 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         deploymentDate = intent.getStringExtra("deployment_date");
         userIDTextView.setText("Hi " + userID + "!");
 
-        Log.d("info my guy", cityID + " " + manholeID + " " + deploymentDate);
+        deploymentLogTextView.setText("");
         db.collection("cities")
                 .document(cityID)
                 .collection("manholes")
                 .document(manholeID)
                 .collection("deployments")
                 .document(deploymentDate)
+                .collection("deployment log")
+                .document("data")
                 .get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
                     @Override
                     public void onComplete(@NonNull Task<DocumentSnapshot> task) {
                         if (task.isSuccessful()) {
+                            deploymentLogTextView.append("Device deployed on: " + deploymentDate + "\n\n");
                             DocumentSnapshot document = task.getResult();
                             Map<String, Object> deploymentData = document.getData();
-                            deploymentLogTextView.append("Device deployed on: " + document.getId()+"\n\n");
                             for (String key : deploymentData.keySet()) {
-                                deploymentLogTextView.append(key + ":\t" + deploymentData.get(key) + "\n");
+                                deploymentLogTextView.append(key + ":   " + deploymentData.get(key) + "\n");
                             }
                         }
                     }
@@ -368,23 +366,58 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
 
                     while (!transmissionEnded) { }
                     //appendMetadataToFileContents(metadataString);
-                    save();
+                    //save();
+                    saveToDatabase();
                 }
             }
         }
     }
 
-    /** save files stored in global variables filenames[] and contents[] to SD card */
-    public void save() {
-        checkExternalMedia();
-        writeToSDFile(filenames, contents);
+    public void saveToDatabase() {
+        String locationString;
+        if (location == null) {
+            locationString = "unable to find location";
+        } else {
+            locationString = location.getLatitude() + " " + location.getLongitude();
+        }
+
+        RetrievalLog log = new RetrievalLog(
+                userID,
+                locationString,
+                notesEditText.getText().toString()
+        );
+
+        db = FirebaseFirestore.getInstance();
+        db.collection("cities")
+                .document(cityID)
+                .collection("manholes")
+                .document(manholeID)
+                .collection("deployments")
+                .document(deploymentDate)
+                .collection("retrieval log")
+                .document("data")
+                .set(log)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Log.d("FIRESTORE", "DocumentSnapshot successfully written!");
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.w("FIRESTORE", "Error writing document", e);
+                    }
+                });
+
+        feedBackString += "Database successfully updated\n\n";
         String tmpfeedBackString = feedBackString;
         feedBackString = "";
-
-        Intent emailActivityIntent = new Intent(RetrievalActivity.this, EmailActivity.class);
+        Intent emailActivityIntent = new Intent(RetrievalActivity.this, FeedbackActivity.class);
         emailActivityIntent.putExtra("filenames", filenames); //Optional parameters
         emailActivityIntent.putExtra("feedback", tmpfeedBackString); //Optional parameters
         RetrievalActivity.this.startActivity(emailActivityIntent);
+
     }
 
     /** log out user and send back to login screen */
@@ -436,73 +469,6 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
             }
         } else {
             Toast.makeText(RetrievalActivity.this, "No devices found", Toast.LENGTH_LONG).show();
-        }
-    }
-
-    /** updates contents of files with desired metadata */
-    public void appendMetadataToFileContents(String metadata) {
-        for (int i = 0; i < contents.length; i++) {
-            contents[i] = metadata + contents[i];
-        }
-    }
-
-    /** Method to check whether external media available and writable. This is adapted from
-     http://developer.android.com/guide/topics/data/data-storage.html#filesExternal */
-    private void checkExternalMedia() {
-        boolean mExternalStorageAvailable = false;
-        boolean mExternalStorageWriteable = false;
-        String state = Environment.getExternalStorageState();
-
-        if (Environment.MEDIA_MOUNTED.equals(state)) {
-            // Can read and write the media
-            mExternalStorageAvailable = mExternalStorageWriteable = true;
-        } else if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
-            // Can only read the media
-            mExternalStorageAvailable = true;
-            mExternalStorageWriteable = false;
-        } else {
-            // Can't read or write
-            mExternalStorageAvailable = mExternalStorageWriteable = false;
-        }
-        //feedbackView.append("\n\nExternal Media: readable="+mExternalStorageAvailable+" writable="+mExternalStorageWriteable);
-    }
-
-    /** Method to write ascii text characters to file on SD card. Note that you must add a
-     WRITE_EXTERNAL_STORAGE permission to the manifest file or this method will throw
-     a FileNotFound Exception because you won't have write permission. */
-    private void writeToSDFile(String[] filenames, String[] contents) {
-        // Find the root of the external storage.
-        // See http://developer.android.com/guide/topics/data/data-  storage.html#filesExternal
-
-        File root = android.os.Environment.getExternalStorageDirectory();
-        //feedbackView.append("\nExternal file system root: "+root);
-
-        // See http://stackoverflow.com/questions/3551821/android-write-to-sd-card-folder
-
-        File dir = new File(root.getAbsolutePath() + "/" + FOLDER_NAME);
-        dir.mkdirs();
-
-        try {
-            String feedback = "";
-            for (int i = 0; i < filenames.length; i++) {
-                File file = new File(dir, filenames[i]);
-                FileOutputStream f = new FileOutputStream(file);
-                PrintWriter pw = new PrintWriter(f);
-                pw.print(contents[i]);
-                pw.flush();
-                pw.close();
-                f.close();
-                feedback += "File written to " + file + "\n";
-            }
-            feedBackString += feedback + "\n";
-        } catch (FileNotFoundException e) {
-            String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
-            requestPermissions(permissions, 1);
-            e.printStackTrace();
-            //Toast.makeText(RetrievalActivity.this, "Check permissions in app settings", Toast.LENGTH_LONG).show();
-        } catch (IOException e) {
-            e.printStackTrace();
-            Toast.makeText(RetrievalActivity.this, "Unknown error", Toast.LENGTH_LONG).show();
         }
     }
 

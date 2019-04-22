@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".EmailActivity">
+    tools:context=".FeedbackActivity">
 
     <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
 
@@ -12,6 +12,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/background"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
         >
 
         <ScrollView
@@ -20,7 +22,8 @@
             android:layout_marginTop="@dimen/outer_margin"
             android:layout_marginLeft="@dimen/outer_margin"
             android:layout_marginRight="@dimen/outer_margin"
-            android:layout_marginBottom="215dp"
+            android:layout_marginBottom="@dimen/inner_margin"
+            android:layout_above="@+id/buttonNext"
             android:background="@color/shadow"
             >
             <TextView
@@ -33,21 +36,6 @@
                 />
 
         </ScrollView>
-
-        <Button
-            android:id="@+id/buttonEmail"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="15dp"
-            android:padding="@dimen/padding"
-            android:layout_centerHorizontal="true"
-            android:layout_above="@+id/buttonNext"
-            android:background="@drawable/button"
-            android:onClick="onClickEmail"
-            android:text="@string/email"
-            android:textSize="@dimen/font_size_large"
-            android:textColor="@color/white"
-            />
 
         <Button
             android:id="@+id/buttonNext"

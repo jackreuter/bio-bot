@@ -16,6 +16,7 @@
     <string name="reset_time">Reset time:</string>
     <string name="light_turned_green">Light turned green:</string>
     <string name="log_info">Log info</string>
+    <string name="light_status">Light status:</string>
 
     <string-array name="blinking_solid">
         <item>Blinking</item>

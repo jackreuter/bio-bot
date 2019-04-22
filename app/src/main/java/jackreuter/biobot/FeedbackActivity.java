@@ -7,8 +7,6 @@ import android.os.Environment;
 import android.support.v4.content.FileProvider;
 import android.os.Bundle;
 import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -16,7 +14,7 @@ import android.widget.Toast;
 import java.io.File;
 import java.util.ArrayList;
 
-public class EmailActivity extends Activity {
+public class FeedbackActivity extends Activity {
 
     TextView feedbackView;
     Button emailButton;
@@ -35,16 +33,9 @@ public class EmailActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        //Remove title bar
-        //this.requestWindowFeature(Window.FEATURE_NO_TITLE);
-
-        //Remove notification bar
-        //this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-
-        setContentView(R.layout.activity_email);
+        setContentView(R.layout.activity_feedback);
 
         feedbackView = findViewById(R.id.textViewFeedback);
-        emailButton = findViewById(R.id.buttonEmail);
         nextButton = findViewById(R.id.buttonNext);
 
         Intent intent = getIntent();
@@ -70,7 +61,7 @@ public class EmailActivity extends Activity {
         for (String filename : filenames)
         {
             File fileIn = new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/"+FOLDER_NAME, filename);
-            Uri u = FileProvider.getUriForFile(EmailActivity.this, EmailActivity.this.getApplicationContext().getPackageName() + ".provider", fileIn);
+            Uri u = FileProvider.getUriForFile(FeedbackActivity.this, FeedbackActivity.this.getApplicationContext().getPackageName() + ".provider", fileIn);
             uris.add(u);
         }
 
@@ -79,13 +70,16 @@ public class EmailActivity extends Activity {
         try {
             startActivity(Intent.createChooser(emailIntent, "Send mail..."));
         } catch (android.content.ActivityNotFoundException ex) {
-            Toast.makeText(EmailActivity.this, "There is no email client installed.", Toast.LENGTH_LONG).show();
+            Toast.makeText(FeedbackActivity.this, "There is no email client installed.", Toast.LENGTH_LONG).show();
         }
     }
 
     /** return to the main activity to communicate with arduino */
     public void onClickNext(View view) {
-        finish();
+        Intent nextIntent = new Intent(FeedbackActivity.this, ManholeSelectionActivity.class);
+        nextIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        nextIntent.putExtra("user_id", userID);
+        startActivity(nextIntent);
     }
 
     /** back button equivalent to next */

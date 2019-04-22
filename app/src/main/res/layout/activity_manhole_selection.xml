@@ -12,17 +12,20 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/background"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
         >
 
         <TextView
             android:id="@+id/textViewUserID"
-            android:layout_marginBottom="25dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginLeft="@dimen/outer_margin"
-            android:layout_marginTop="@dimen/outer_margin"
+            android:layout_marginRight="@dimen/inner_margin"
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
+            android:layout_above="@+id/selectCityAndManholeTextView"
+            android:layout_toLeftOf="@id/buttonLogout"
             />
 
         <Button
@@ -47,50 +50,51 @@
             android:text="@string/select_city"
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
-            android:layout_margin="15dp"
+            android:layout_marginTop="@dimen/outer_margin"
+            android:layout_marginBottom="@dimen/inner_margin"
             android:layout_centerHorizontal="true"
-            android:layout_above="@+id/city_spinner"
+            android:layout_below="@+id/buttonLogout"
             />
 
         <Spinner
             android:id="@+id/city_spinner"
             android:layout_width="match_parent"
             android:layout_height="45dp"
-            android:layout_marginRight="@dimen/outer_margin"
+            android:layout_marginTop="@dimen/inner_margin"
+            android:layout_marginBottom="@dimen/inner_margin"
             android:layout_marginLeft="@dimen/outer_margin"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="10dp"
+            android:layout_marginRight="@dimen/outer_margin"
             android:background="@color/white"
             android:layout_centerHorizontal="true"
-            android:layout_above="@+id/manhole_spinner"
+            android:layout_below="@+id/selectCityAndManholeTextView"
             />
 
         <Spinner
             android:id="@+id/manhole_spinner"
             android:layout_width="match_parent"
             android:layout_height="45dp"
-            android:layout_marginRight="@dimen/outer_margin"
+            android:layout_marginBottom="@dimen/inner_margin"
+            android:layout_marginTop="@dimen/inner_margin"
             android:layout_marginLeft="@dimen/outer_margin"
-            android:layout_marginBottom="10dp"
-            android:layout_marginTop="10dp"
+            android:layout_marginRight="@dimen/outer_margin"
             android:background="@color/white"
             android:layout_centerHorizontal="true"
-            android:layout_above="@+id/buttonContinue"
+            android:layout_below="@+id/city_spinner"
             />
 
         <Button
             android:id="@+id/buttonContinue"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="15dp"
+            android:layout_marginTop="@dimen/inner_margin"
             android:padding="@dimen/padding"
             android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true"
             android:onClick="onClickContinue"
             android:background="@drawable/button"
             android:textSize="@dimen/font_size_large"
             android:text="@string/continue_button"
             android:textColor="@color/white"
+            android:layout_below="@+id/manhole_spinner"
             />
 
     </RelativeLayout>

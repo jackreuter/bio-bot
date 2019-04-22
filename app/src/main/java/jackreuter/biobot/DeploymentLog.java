@@ -6,7 +6,7 @@ public class DeploymentLog {
     String boxID;
     String resetTime;
     String lightTurnedGreen;
-    String lightBlinking;
+    String lightStatus;
     String deploymentNotes;
 
     public DeploymentLog(
@@ -15,7 +15,7 @@ public class DeploymentLog {
             String _boxID,
             String _resetTime,
             String _lightTurnedGreen,
-            String _lightBlinking,
+            String _lightStatus,
             String _deploymentNotes
     ) {
         deploymentUser = _deploymentUser;
@@ -23,7 +23,7 @@ public class DeploymentLog {
         boxID = _boxID;
         resetTime = _resetTime;
         lightTurnedGreen = _lightTurnedGreen;
-        lightBlinking = _lightBlinking;
+        lightStatus = _lightStatus;
         deploymentNotes = _deploymentNotes;
     }
 }

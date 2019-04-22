@@ -55,7 +55,7 @@
                 android:resource="@xml/device_filter" />
         </activity>
         <activity
-            android:name=".EmailActivity"
+            android:name=".FeedbackActivity"
             android:configChanges="orientation"
             android:screenOrientation="portrait" />
     </application>

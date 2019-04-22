@@ -11,18 +11,20 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/background"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
         >
 
         <TextView
             android:id="@+id/textViewUserID"
             android:layout_marginLeft="@dimen/outer_margin"
-            android:layout_marginRight="@dimen/outer_margin"
-            android:layout_marginTop="@dimen/outer_margin"
-            android:layout_marginBottom="25dp"
+            android:layout_marginRight="@dimen/inner_margin"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
+            android:layout_above="@+id/scrollViewDeploymentLog"
+            android:layout_toLeftOf="@id/buttonLogout"
             />
 
         <Button
@@ -31,7 +33,6 @@
             android:layout_height="wrap_content"
             android:layout_marginRight="@dimen/outer_margin"
             android:layout_marginTop="@dimen/outer_margin"
-            android:layout_marginBottom="25dp"
             android:padding="@dimen/padding"
             android:text="@string/log_out"
             android:textSize="@dimen/font_size_large"
@@ -43,8 +44,10 @@
             />
 
         <ScrollView
+            android:id="@+id/scrollViewDeploymentLog"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_marginTop="@dimen/inner_margin"
             android:layout_marginLeft="@dimen/outer_margin"
             android:layout_marginRight="@dimen/outer_margin"
             android:layout_below="@+id/buttonLogout"
