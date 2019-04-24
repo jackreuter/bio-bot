@@ -11,6 +11,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
+import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -22,6 +23,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.TimePicker;
@@ -58,6 +60,7 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
     EditText editTextLightTurnedGreen;
     Spinner lightStatusSpinner;
     ArrayAdapter<String> lightStatusSpinnerAdapter;
+    ImageView imageViewRefreshPlateQRCode;
     EditText editTextNotes;
 
     // cloud firestore database
@@ -77,7 +80,8 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
     String manholeID;
     String lightStatusString;
 
-    // shared preference to store login
+    // camera request
+    static final int REQUEST_IMAGE_CAPTURE = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,6 +102,7 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
         editTextBoxID = (EditText) findViewById(R.id.editTextBoxID);
         editTextResetTime = (EditText) findViewById(R.id.editTextResetTime);
         editTextLightTurnedGreen = (EditText) findViewById(R.id.editTextLightTurnedGreen);
+        imageViewRefreshPlateQRCode = (ImageView) findViewById(R.id.imageViewRefreshPlateQRCode);
         editTextNotes = (EditText) findViewById(R.id.editTextNotes);
 
         ArrayList<String> lightStatusOptions = new ArrayList();
@@ -165,6 +170,17 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
             }
         });
 
+        // create camera dialog for refresh plate QR code editText
+        imageViewRefreshPlateQRCode.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+                    startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+                }
+            }
+        });
+
         // handle spinner selections
         lightStatusSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -177,6 +193,15 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
 
         });
 
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+            Bundle extras = data.getExtras();
+            Bitmap imageBitmap = (Bitmap) extras.get("data");
+            imageView.setImageBitmap(imageBitmap);
+        }
     }
 
     @Override

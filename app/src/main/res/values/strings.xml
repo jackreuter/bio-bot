@@ -17,6 +17,9 @@
     <string name="light_turned_green">Light turned green:</string>
     <string name="log_info">Log info</string>
     <string name="light_status">Light status:</string>
+    <string name="deployment_log_header">Deployment log:</string>
+    <string name="retrieval_log_header">Retrieval log:</string>
+    <string name="refresh_plate_qr_code">Refresh plate QR code:</string>
 
     <string-array name="blinking_solid">
         <item>Blinking</item>

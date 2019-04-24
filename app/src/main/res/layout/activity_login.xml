@@ -23,6 +23,7 @@
             android:text="@string/user_id"
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
+            android:textStyle="italic"
             android:layout_margin="15dp"
             android:layout_centerHorizontal="true"
             android:layout_above="@+id/editTextUserID"

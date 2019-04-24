@@ -4,11 +4,13 @@ import android.app.Activity;
 import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
+import android.widget.SpinnerAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -16,10 +18,17 @@ import com.google.android.gms.common.util.CollectionUtils;
 import com.google.android.gms.common.util.MapUtils;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentChange;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+
+import org.w3c.dom.Document;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,8 +43,6 @@ public class ManholeSelectionActivity extends Activity {
     TextView userIDTextView;
     Spinner citySpinner;
     Spinner manholeSpinner;
-    ArrayAdapter<String> citySpinnerAdapter;
-    ArrayAdapter<String> manholeSpinnerAdapter;
 
     // Global variables
     String cityID;
@@ -53,8 +60,8 @@ public class ManholeSelectionActivity extends Activity {
         userIDTextView = (TextView) findViewById(R.id.textViewUserID);
         citySpinner = (Spinner) findViewById(R.id.city_spinner);
         manholeSpinner = (Spinner) findViewById(R.id.manhole_spinner);
-        citySpinnerAdapter = new ArrayAdapter<String>(this, R.layout.spinner_item, new ArrayList<String>());
-        manholeSpinnerAdapter = new ArrayAdapter<String>(this, R.layout.spinner_item, new ArrayList<String>());
+        final ArrayAdapter citySpinnerAdapter = new ArrayAdapter<String>(this, R.layout.spinner_item, new ArrayList<String>());
+        final ArrayAdapter manholeSpinnerAdapter = new ArrayAdapter<String>(this, R.layout.spinner_item, new ArrayList<String>());
         citySpinnerAdapter.setDropDownViewResource(R.layout.spinner_item);
         citySpinner.setAdapter(citySpinnerAdapter);
         manholeSpinnerAdapter.setDropDownViewResource(R.layout.spinner_item);
@@ -67,46 +74,48 @@ public class ManholeSelectionActivity extends Activity {
         // CLOUD FIRESTORE DATABASE SYNC
         db = FirebaseFirestore.getInstance();
 
-        // populate city spinner
-        db.collection("cities")
-                .get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        if (task.isSuccessful()) {
-                            for (QueryDocumentSnapshot document : task.getResult()) {
-                                citySpinnerAdapter.add(document.getId());
-                                citySpinnerAdapter.notifyDataSetChanged();
-                            }
-                        } else {
-                            //Log.w("data ayy", "Error getting documents.", task.getException());
-                        }
-                    }
-                });
+        // listen for changes in database to repopulate spinner
+        final CollectionReference citiesRef = db.collection("cities");
+        citiesRef.addSnapshotListener(new EventListener<QuerySnapshot>() {
+            @Override
+            public void onEvent(@javax.annotation.Nullable QuerySnapshot snapshot, @javax.annotation.Nullable FirebaseFirestoreException e) {
+                if (e != null) {
+                    Log.w("FIRESTORE", "Listen failed.", e);
+                    return;
+                }
+
+                if (snapshot != null) {
+                    updateSpinner(citiesRef, citySpinnerAdapter);
+                } else {
+                    Log.d("FIRESTORE", "Current data: null");
+                }
+            }
+        });
 
         // handle spinner selections
         citySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
                 // clear and populate manhole spinner
-                manholeSpinnerAdapter.clear();
                 cityID = parentView.getItemAtPosition(position).toString();
-                db.collection("cities")
+                final CollectionReference manholesRef = db.collection("cities")
                         .document(cityID)
-                        .collection("manholes")
-                        .get()
-                        .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                            @Override
-                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                                if (task.isSuccessful()) {
-                                    for (QueryDocumentSnapshot document : task.getResult()) {
-                                        manholeSpinnerAdapter.add(document.getId());
-                                        manholeSpinnerAdapter.notifyDataSetChanged();
-                                    }
-                                } else {
-                                }
-                            }
-                        });
+                        .collection("manholes");
+                manholesRef.addSnapshotListener(new EventListener<QuerySnapshot>() {
+                    @Override
+                    public void onEvent(@javax.annotation.Nullable QuerySnapshot snapshot, @javax.annotation.Nullable FirebaseFirestoreException e) {
+                        if (e != null) {
+                            Log.w("FIRESTORE", "Listen failed.", e);
+                            return;
+                        }
+
+                        if (snapshot != null) {
+                            updateSpinner(manholesRef, manholeSpinnerAdapter);
+                        } else {
+                            Log.d("FIRESTORE", "Current data: null");
+                        }
+                    }
+                });
             }
 
             @Override
@@ -120,34 +129,38 @@ public class ManholeSelectionActivity extends Activity {
         manholeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-                // find most recent deployment, see if unfinished
+                // listen for changes in selected manhole deployments to check if deployed
                 manholeID = parentView.getItemAtPosition(position).toString();
-                db.collection("cities")
+                final CollectionReference deploymentsRef = db.collection("cities")
                         .document(cityID)
                         .collection("manholes")
                         .document(manholeID)
-                        .collection("deployments")
-                        .get()
-                        .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                            @Override
-                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                                if (task.isSuccessful()) {
-                                    ArrayList<String> deploymentDates = new ArrayList<String>();
-                                    for (QueryDocumentSnapshot document : task.getResult()) {
-                                        deploymentDates.add(document.getId());
-                                    }
-                                    if (deploymentDates.size() > 0) {
-                                        Collections.sort(deploymentDates);
-                                        Collections.reverse(deploymentDates);
-                                        deploymentDate = deploymentDates.get(0);
-                                    } else {
-                                        deploymentDate = "";
-                                    }
-                                } else {
-                                }
-                            }
-                        });
+                        .collection("deployments");
+                deploymentsRef.addSnapshotListener(new EventListener<QuerySnapshot>() {
+                    @Override
+                    public void onEvent(@javax.annotation.Nullable QuerySnapshot snapshot, @javax.annotation.Nullable FirebaseFirestoreException e) {
+                        if (e != null) {
+                            Log.w("FIRESTORE", "Listen failed.", e);
+                            return;
+                        }
 
+                        if (snapshot != null) {
+                            ArrayList<String> deploymentDates = new ArrayList<String>();
+                            for (DocumentSnapshot document : snapshot.getDocuments()) {
+                                deploymentDates.add(document.getId());
+                            }
+                            if (deploymentDates.size() > 0) {
+                                Collections.sort(deploymentDates);
+                                Collections.reverse(deploymentDates);
+                                deploymentDate = deploymentDates.get(0);
+                            } else {
+                                deploymentDate = "";
+                            }
+                        } else {
+                            Log.d("FIRESTORE", "Current data: null");
+                        }
+                    }
+                });
             }
 
             @Override
@@ -157,6 +170,26 @@ public class ManholeSelectionActivity extends Activity {
 
         });
 
+    }
+
+    // check database for collection, update spinner with the results
+    public void updateSpinner(CollectionReference collection, final ArrayAdapter spinnerAdapter) {
+        spinnerAdapter.clear();
+        spinnerAdapter.notifyDataSetChanged();
+        collection.get()
+                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                        if (task.isSuccessful()) {
+                            for (QueryDocumentSnapshot document : task.getResult()) {
+                                spinnerAdapter.add(document.getId());
+                                spinnerAdapter.notifyDataSetChanged();
+                            }
+                        } else {
+                            //Log.w("data ayy", "Error getting documents.", task.getException());
+                        }
+                    }
+                });
     }
 
     public void onClickContinue(View view) {

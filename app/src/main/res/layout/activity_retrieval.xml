@@ -23,7 +23,8 @@
             android:layout_height="wrap_content"
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
-            android:layout_above="@+id/scrollViewDeploymentLog"
+            android:textStyle="italic"
+            android:layout_above="@+id/textViewDeploymentLogHeader"
             android:layout_toLeftOf="@id/buttonLogout"
             />
 
@@ -43,15 +44,27 @@
             android:background="@drawable/button"
             />
 
+        <TextView
+            android:id="@+id/textViewDeploymentLogHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:layout_marginTop="@dimen/outer_margin"
+            android:textSize="@dimen/font_size_large"
+            android:textColor="@color/text_color"
+            android:text="@string/deployment_log_header"
+            android:textStyle="bold"
+            android:layout_below="@+id/buttonLogout"
+            />
+
         <ScrollView
             android:id="@+id/scrollViewDeploymentLog"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginTop="@dimen/inner_margin"
+            android:layout_height="wrap_content"
             android:layout_marginLeft="@dimen/outer_margin"
             android:layout_marginRight="@dimen/outer_margin"
-            android:layout_below="@+id/buttonLogout"
-            android:layout_above="@+id/textViewNotes"
+            android:layout_below="@+id/textViewDeploymentLogHeader"
             android:background="@color/shadow"
             >
             <TextView
@@ -71,10 +84,11 @@
             android:layout_alignParentLeft="true"
             android:layout_marginLeft="@dimen/outer_margin"
             android:layout_marginTop="@dimen/inner_margin"
-            android:layout_above="@+id/editTextNotes"
+            android:layout_below="@+id/scrollViewDeploymentLog"
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
             android:text="@string/notes"
+            android:textStyle="bold"
             />
 
         <EditText
@@ -87,7 +101,7 @@
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
             android:background="@color/white"
-            android:layout_above="@+id/buttonRead"
+            android:layout_below="@+id/textViewNotes"
             />
 
         <Button
@@ -95,15 +109,15 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
-            android:layout_alignParentBottom="true"
             android:layout_marginBottom="@dimen/outer_margin"
-            android:layout_marginTop="@dimen/inner_margin"
+            android:layout_marginTop="@dimen/inner_margin_medium"
             android:padding="@dimen/padding"
             android:onClick="onClickRead"
             android:text="@string/read"
             android:textColor="@color/white"
             android:textSize="@dimen/font_size_large"
             android:background="@drawable/button"
+            android:layout_below="@+id/editTextNotes"
             />
 
     </RelativeLayout>

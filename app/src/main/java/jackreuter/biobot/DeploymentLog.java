@@ -26,4 +26,30 @@ public class DeploymentLog {
         lightStatus = _lightStatus;
         deploymentNotes = _deploymentNotes;
     }
+
+    public static String getFieldName(String key) {
+        switch (key) {
+            case "deploymentUser":
+                return "User";
+
+            case "deploymentGPS":
+                return "GPS coordinates";
+
+            case "boxID":
+                return "Box ID";
+
+            case "resetTime":
+                return "Reset time";
+
+            case "lightTurnedGreen":
+                return "Light turned green";
+
+            case "lightStatus":
+                return "Light status";
+
+            case "deploymentNotes":
+                return "Notes";
+        }
+        return "";
+    }
 }

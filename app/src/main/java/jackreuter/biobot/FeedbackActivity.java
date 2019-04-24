@@ -16,8 +16,8 @@ import java.util.ArrayList;
 
 public class FeedbackActivity extends Activity {
 
+    TextView userIDTextView;
     TextView feedbackView;
-    Button emailButton;
     Button nextButton;
     String[] filenames;
     String feedbackString;
@@ -35,6 +35,7 @@ public class FeedbackActivity extends Activity {
 
         setContentView(R.layout.activity_feedback);
 
+        userIDTextView = findViewById(R.id.textViewUserID);
         feedbackView = findViewById(R.id.textViewFeedback);
         nextButton = findViewById(R.id.buttonNext);
 
@@ -42,6 +43,8 @@ public class FeedbackActivity extends Activity {
         filenames = intent.getStringArrayExtra("filenames");
         feedbackString = intent.getStringExtra("feedback");
         userID = intent.getStringExtra("user_id");
+        userIDTextView.setText("Hi " + userID + "!");
+
         feedbackView.setText(feedbackString);
     }
 
@@ -86,5 +89,12 @@ public class FeedbackActivity extends Activity {
     @Override
     public void onBackPressed() {
         nextButton.performClick();
+    }
+
+    public void onClickLogout(View view) {
+        Intent logoutIntent = new Intent(FeedbackActivity.this, LoginActivity.class);
+        logoutIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        logoutIntent.putExtra("logout", true);
+        startActivity(logoutIntent);
     }
 }

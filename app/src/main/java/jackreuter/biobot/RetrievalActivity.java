@@ -271,7 +271,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                             DocumentSnapshot document = task.getResult();
                             Map<String, Object> deploymentData = document.getData();
                             for (String key : deploymentData.keySet()) {
-                                deploymentLogTextView.append(key + ":   " + deploymentData.get(key) + "\n");
+                                deploymentLogTextView.append(DeploymentLog.getFieldName(key) + ":   " + deploymentData.get(key) + "\n");
                             }
                         }
                     }
@@ -410,13 +410,14 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                     }
                 });
 
-        feedBackString += "Database successfully updated\n\n";
+        feedBackString += "Database successfully updated\n";
         String tmpfeedBackString = feedBackString;
         feedBackString = "";
-        Intent emailActivityIntent = new Intent(RetrievalActivity.this, FeedbackActivity.class);
-        emailActivityIntent.putExtra("filenames", filenames); //Optional parameters
-        emailActivityIntent.putExtra("feedback", tmpfeedBackString); //Optional parameters
-        RetrievalActivity.this.startActivity(emailActivityIntent);
+        Intent feedbackActivityIntent = new Intent(RetrievalActivity.this, FeedbackActivity.class);
+        feedbackActivityIntent.putExtra("filenames", filenames); //Optional parameters
+        feedbackActivityIntent.putExtra("feedback", tmpfeedBackString); //Optional parameters
+        feedbackActivityIntent.putExtra("user_id", userID);
+        RetrievalActivity.this.startActivity(feedbackActivityIntent);
 
     }
 

@@ -23,6 +23,7 @@
             android:layout_height="wrap_content"
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
+            android:textStyle="italic"
             android:layout_above="@id/textViewBoxID"
             android:layout_toLeftOf="@id/buttonLogout"
             />
@@ -53,6 +54,7 @@
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
             android:text="@string/box_id"
+            android:textStyle="bold"
             android:layout_below="@+id/buttonLogout"
             />
 
@@ -61,7 +63,7 @@
             android:layout_width="match_parent"
             android:layout_marginLeft="@dimen/outer_margin"
             android:layout_marginRight="@dimen/outer_margin"
-            android:layout_marginBottom="@dimen/inner_margin"
+            android:layout_marginBottom="@dimen/inner_margin_medium"
             android:padding="@dimen/padding"
             android:layout_height="wrap_content"
             android:background="@color/white"
@@ -79,6 +81,7 @@
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
             android:text="@string/reset_time"
+            android:textStyle="bold"
             android:layout_below="@id/editTextBoxID"
             />
 
@@ -87,7 +90,7 @@
             android:layout_width="match_parent"
             android:layout_marginLeft="@dimen/outer_margin"
             android:layout_marginRight="@dimen/outer_margin"
-            android:layout_marginBottom="@dimen/inner_margin"
+            android:layout_marginBottom="@dimen/inner_margin_medium"
             android:padding="@dimen/padding"
             android:layout_height="wrap_content"
             android:background="@color/white"
@@ -106,6 +109,7 @@
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
             android:text="@string/light_turned_green"
+            android:textStyle="bold"
             android:layout_below="@id/editTextResetTime"
             />
 
@@ -114,7 +118,7 @@
             android:layout_width="match_parent"
             android:layout_marginLeft="@dimen/outer_margin"
             android:layout_marginRight="@dimen/outer_margin"
-            android:layout_marginBottom="@dimen/inner_margin"
+            android:layout_marginBottom="@dimen/inner_margin_medium"
             android:padding="@dimen/padding"
             android:layout_height="wrap_content"
             android:background="@color/white"
@@ -133,6 +137,7 @@
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
             android:text="@string/light_status"
+            android:textStyle="bold"
             android:layout_below="@+id/editTextLightTurnedGreen"
             />
 
@@ -142,11 +147,39 @@
             android:layout_height="wrap_content"
             android:layout_marginRight="@dimen/outer_margin"
             android:layout_marginLeft="@dimen/outer_margin"
-            android:layout_marginBottom="@dimen/inner_margin"
+            android:layout_marginBottom="@dimen/inner_margin_medium"
             android:background="@color/white"
             android:layout_centerHorizontal="true"
             android:layout_below="@id/textViewLightStatus"
             android:entries="@array/blinking_solid"
+            />
+
+        <TextView
+            android:id="@+id/textViewRefreshPlateQRCode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:textSize="@dimen/font_size_large"
+            android:textColor="@color/text_color"
+            android:text="@string/refresh_plate_qr_code"
+            android:textStyle="bold"
+            android:layout_below="@id/lightStatusSpinner"
+            />
+
+        <ImageView
+            android:id="@+id/imageViewRefreshPlateQRCode"
+            android:layout_width="match_parent"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:layout_marginRight="@dimen/outer_margin"
+            android:layout_marginBottom="@dimen/inner_margin_medium"
+            android:padding="@dimen/padding"
+            android:layout_height="wrap_content"
+            android:background="@color/white"
+            android:textSize="@dimen/font_size_large"
+            android:textColor="@color/text_color"
+            android:focusable="false"
+            android:layout_below="@id/textViewRefreshPlateQRCode"
             />
 
         <TextView
@@ -158,7 +191,8 @@
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
             android:text="@string/notes"
-            android:layout_below="@+id/lightStatusSpinner"
+            android:textStyle="bold"
+            android:layout_below="@+id/editTextRefreshPlateQRCode"
             />
 
         <EditText
