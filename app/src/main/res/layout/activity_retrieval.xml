@@ -24,7 +24,7 @@
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
             android:textStyle="italic"
-            android:layout_above="@+id/textViewDeploymentLogHeader"
+            android:layout_above="@+id/textViewCityManhole"
             android:layout_toLeftOf="@id/buttonLogout"
             />
 
@@ -45,30 +45,42 @@
             />
 
         <TextView
-            android:id="@+id/textViewDeploymentLogHeader"
+            android:id="@+id/textViewCityManhole"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/outer_margin"
+            android:layout_marginRight="@dimen/outer_margin"
+            android:layout_alignParentRight="true"
+            android:textSize="@dimen/font_size_large"
+            android:textColor="@color/text_color"
+            android:textStyle="italic"
+            android:layout_below="@+id/buttonLogout"
+            />
+
+        <TextView
+            android:id="@+id/textViewInstallLogHeader"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
             android:layout_marginLeft="@dimen/outer_margin"
-            android:layout_marginTop="@dimen/outer_margin"
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
-            android:text="@string/deployment_log_header"
+            android:text="@string/install_log_header"
             android:textStyle="bold"
-            android:layout_below="@+id/buttonLogout"
+            android:layout_below="@+id/textViewCityManhole"
             />
 
         <ScrollView
-            android:id="@+id/scrollViewDeploymentLog"
+            android:id="@+id/scrollViewInstallLog"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginLeft="@dimen/outer_margin"
             android:layout_marginRight="@dimen/outer_margin"
-            android:layout_below="@+id/textViewDeploymentLogHeader"
+            android:layout_below="@+id/textViewInstallLogHeader"
             android:background="@color/shadow"
             >
             <TextView
-                android:id="@+id/textViewDeploymentLog"
+                android:id="@+id/textViewInstallLog"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:textColor="@color/text_color"
@@ -78,17 +90,263 @@
         </ScrollView>
 
         <TextView
-            android:id="@+id/textViewNotes"
+            android:id="@+id/textViewDiagnosisHeader"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
             android:layout_marginLeft="@dimen/outer_margin"
             android:layout_marginTop="@dimen/inner_margin"
-            android:layout_below="@+id/scrollViewDeploymentLog"
+            android:textSize="@dimen/font_size_large"
+            android:textColor="@color/text_color"
+            android:text="@string/diagnosis"
+            android:textStyle="bold"
+            android:layout_below="@+id/scrollViewInstallLog"
+            />
+
+        <ImageView
+            android:id="@+id/imageViewGreenLedStatusAlert"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/textViewDiagnosisHeader"
+            android:layout_margin="@dimen/inner_margin"
+            android:src="@drawable/ic_bullet_24px"
+            />
+
+        <RelativeLayout
+            android:id="@+id/relativeLayoutDiagnosis"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/shadow"
+            android:padding="@dimen/padding"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:layout_marginRight="@dimen/outer_margin"
+            android:layout_below="@+id/textViewDiagnosisHeader"
+            >
+
+            <TextView
+                android:id="@+id/textViewGreenLedStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:textSize="@dimen/font_size_small"
+                android:textColor="@color/text_color"
+                android:text="@string/green_led_status"
+                />
+
+            <RadioGroup
+                android:id="@+id/radioGroupGreenLedStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_below="@+id/textViewGreenLedStatus"
+                >
+
+                <RadioButton
+                    android:id="@+id/radioButtonGreenLedOn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/font_size_detail"
+                    android:text="On"
+                    />
+
+                <RadioButton
+                    android:id="@+id/radioButtonGreenLedOff"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/font_size_detail"
+                    android:text="Off"
+                    />
+
+            </RadioGroup>
+
+        </RelativeLayout>
+
+        <TextView
+            android:id="@+id/textViewTasksHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_marginTop="@dimen/inner_margin"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:textSize="@dimen/font_size_large"
+            android:textColor="@color/text_color"
+            android:text="@string/tasks"
+            android:textStyle="bold"
+            android:layout_below="@+id/relativeLayoutDiagnosis"
+            />
+
+        <ImageView
+            android:id="@+id/imageViewScanQrCodeAlert"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/textViewTasksHeader"
+            android:layout_marginLeft="@dimen/inner_margin"
+            android:layout_marginTop="48dp"
+            android:src="@drawable/ic_bullet_24px"
+            />
+
+        <ImageView
+            android:id="@+id/imageViewSamplePlacedOnIceAlert"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/imageViewScanQrCodeAlert"
+            android:layout_marginLeft="@dimen/inner_margin"
+            android:layout_marginTop="64dp"
+            android:src="@drawable/ic_bullet_24px"
+            />
+
+        <ImageView
+            android:id="@+id/imageViewReadDataAlert"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/imageViewSamplePlacedOnIceAlert"
+            android:layout_marginLeft="@dimen/inner_margin"
+            android:layout_marginTop="48dp"
+            android:src="@drawable/ic_bullet_24px"
+            />
+
+        <RelativeLayout
+            android:id="@+id/relativeLayoutTasks"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/padding"
+            android:background="@color/shadow"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:layout_marginRight="@dimen/outer_margin"
+            android:layout_below="@+id/textViewTasksHeader"
+            >
+
+            <TextView
+                android:id="@+id/textViewOpenDevice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_marginBottom="@dimen/inner_margin"
+                android:textSize="@dimen/font_size_small"
+                android:textColor="@color/text_color"
+                android:text="@string/open_device"
+                />
+
+            <TextView
+                android:id="@+id/textViewScanQrCode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:textSize="@dimen/font_size_small"
+                android:textColor="@color/text_color"
+                android:text="@string/scan_qr_code"
+                android:layout_below="@+id/textViewOpenDevice"
+                />
+
+            <Button
+                android:id="@+id/buttonScanQrCode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/padding"
+                android:layout_marginBottom="@dimen/inner_margin"
+                android:onClick="onClickScanQrCode"
+                android:text="@string/scan_code"
+                android:textColor="@color/white"
+                android:textSize="@dimen/font_size_small"
+                android:background="@color/black"
+                android:layout_below="@+id/textViewScanQrCode"
+                />
+
+            <ImageView
+                android:id="@+id/imageViewScanQrCodeCheck"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:src="@drawable/ic_baseline_check_24px"
+                android:layout_toRightOf="@+id/buttonScanQrCode"
+                android:layout_below="@+id/textViewScanQrCode"
+                />
+
+            <TextView
+                android:id="@+id/textViewSamplePlacedOnIce"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:textSize="@dimen/font_size_small"
+                android:textColor="@color/text_color"
+                android:text="@string/sample_placed_on_ice"
+                android:layout_below="@+id/buttonScanQrCode"
+                />
+
+            <RadioGroup
+                android:id="@+id/radioGroupSamplePlacedOnIce"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/inner_margin"
+                android:orientation="horizontal"
+                android:layout_below="@+id/textViewSamplePlacedOnIce"
+                >
+
+                <RadioButton
+                    android:id="@+id/radioButtonSamplePlacedOnIceYes"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/font_size_detail"
+                    android:text="Yes"
+                    />
+
+                <RadioButton
+                    android:id="@+id/radioButtonSamplePlacedOnIceNo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/font_size_detail"
+                    android:text="No"
+                    />
+
+            </RadioGroup>
+
+            <TextView
+                android:id="@+id/textViewPlugInDevice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:textSize="@dimen/font_size_small"
+                android:textColor="@color/text_color"
+                android:text="@string/plug_in_device"
+                android:layout_below="@+id/radioGroupSamplePlacedOnIce"
+                />
+
+            <Button
+                android:id="@+id/buttonRead"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/padding"
+                android:layout_marginBottom="@dimen/inner_margin"
+                android:onClick="onClickRead"
+                android:text="@string/read"
+                android:textColor="@color/white"
+                android:textSize="@dimen/font_size_small"
+                android:background="@color/black"
+                android:layout_below="@+id/textViewPlugInDevice"
+                />
+
+            <ImageView
+                android:id="@+id/imageViewReadDataCheck"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:src="@drawable/ic_baseline_check_24px"
+                android:layout_toRightOf="@+id/buttonRead"
+                android:layout_below="@+id/textViewPlugInDevice"
+                />
+
+
+        </RelativeLayout>
+
+        <TextView
+            android:id="@+id/textViewNotes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/inner_margin"
+            android:layout_marginLeft="@dimen/outer_margin"
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
             android:text="@string/notes"
             android:textStyle="bold"
+            android:layout_below="@+id/relativeLayoutTasks"
             />
 
         <EditText
@@ -97,28 +355,30 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="@dimen/outer_margin"
             android:layout_marginRight="@dimen/outer_margin"
+            android:layout_marginBottom="@dimen/inner_margin"
             android:padding="@dimen/padding"
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
             android:background="@color/white"
-            android:layout_below="@+id/textViewNotes"
+            android:layout_below="@id/textViewNotes"
             />
 
         <Button
-            android:id="@+id/buttonRead"
+            android:id="@+id/buttonDone"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_marginBottom="@dimen/outer_margin"
-            android:layout_marginTop="@dimen/inner_margin_medium"
+            android:enabled="false"
+            android:onClick="onClickDone"
             android:padding="@dimen/padding"
-            android:onClick="onClickRead"
-            android:text="@string/read"
+            android:text="@string/done"
             android:textColor="@color/white"
             android:textSize="@dimen/font_size_large"
             android:background="@drawable/button"
+            android:layout_marginBottom="@dimen/outer_margin"
+            android:layout_centerHorizontal="true"
             android:layout_below="@+id/editTextNotes"
             />
+
 
     </RelativeLayout>
 

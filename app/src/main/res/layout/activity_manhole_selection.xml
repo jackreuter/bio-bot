@@ -25,7 +25,7 @@
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
             android:textStyle="italic"
-            android:layout_above="@+id/selectCityAndManholeTextView"
+            android:layout_above="@+id/selectManholeTextView"
             android:layout_toLeftOf="@id/buttonLogout"
             />
 
@@ -45,10 +45,10 @@
             />
 
         <TextView
-            android:id="@+id/selectCityAndManholeTextView"
+            android:id="@+id/selectManholeTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/select_city"
+            android:text="@string/select_manhole"
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
             android:textStyle="bold"
@@ -58,45 +58,58 @@
             android:layout_below="@+id/buttonLogout"
             />
 
-        <Spinner
-            android:id="@+id/city_spinner"
+        <RadioGroup
+            android:id="@+id/radioGroupManholes"
             android:layout_width="match_parent"
-            android:layout_height="45dp"
-            android:layout_marginTop="@dimen/inner_margin"
-            android:layout_marginBottom="@dimen/inner_margin"
+            android:layout_height="wrap_content"
             android:layout_marginLeft="@dimen/outer_margin"
             android:layout_marginRight="@dimen/outer_margin"
             android:background="@color/white"
-            android:layout_centerHorizontal="true"
-            android:layout_below="@+id/selectCityAndManholeTextView"
+            android:layout_marginTop="@dimen/inner_margin"
+            android:layout_marginBottom="@dimen/inner_margin"
+            android:orientation="vertical"
+            android:layout_below="@+id/selectManholeTextView"
             />
 
-        <Spinner
-            android:id="@+id/manhole_spinner"
+        <ImageView
+            android:id="@+id/imageViewMap"
             android:layout_width="match_parent"
-            android:layout_height="45dp"
-            android:layout_marginBottom="@dimen/inner_margin"
-            android:layout_marginTop="@dimen/inner_margin"
+            android:layout_height="wrap_content"
             android:layout_marginLeft="@dimen/outer_margin"
             android:layout_marginRight="@dimen/outer_margin"
-            android:background="@color/white"
-            android:layout_centerHorizontal="true"
-            android:layout_below="@+id/city_spinner"
+            android:layout_below="@+id/radioGroupManholes"
             />
 
         <Button
-            android:id="@+id/buttonContinue"
+            android:id="@+id/buttonInstall"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/inner_margin"
+            android:layout_marginLeft="@dimen/outer_margin"
             android:padding="@dimen/padding"
-            android:layout_centerHorizontal="true"
-            android:onClick="onClickContinue"
+            android:layout_alignParentLeft="true"
+            android:onClick="onClickInstall"
             android:background="@drawable/button"
             android:textSize="@dimen/font_size_large"
-            android:text="@string/continue_button"
+            android:text="@string/install_button"
             android:textColor="@color/white"
-            android:layout_below="@+id/manhole_spinner"
+            android:layout_below="@+id/imageViewMap"
+            />
+
+        <Button
+            android:id="@+id/buttonRetrieve"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/inner_margin"
+            android:layout_marginRight="@dimen/outer_margin"
+            android:padding="@dimen/padding"
+            android:layout_alignParentRight="true"
+            android:onClick="onClickRetrieve"
+            android:background="@drawable/button"
+            android:textSize="@dimen/font_size_large"
+            android:text="@string/retrieveButton"
+            android:textColor="@color/white"
+            android:layout_below="@+id/imageViewMap"
             />
 
     </RelativeLayout>

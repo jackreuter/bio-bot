@@ -16,12 +16,15 @@ import java.util.ArrayList;
 
 public class FeedbackActivity extends Activity {
 
+    TextView cityManholeTextView;
     TextView userIDTextView;
     TextView feedbackView;
     Button nextButton;
     String[] filenames;
     String feedbackString;
     String userID;
+    String cityID;
+    String manholeID;
 
     public final String[] EMAIL_RECIPIENT = {"jreuter@wesleyan.edu"};
     public final String EMAIL_SUBJECT = "BIOBOT";
@@ -35,6 +38,7 @@ public class FeedbackActivity extends Activity {
 
         setContentView(R.layout.activity_feedback);
 
+        cityManholeTextView = findViewById(R.id.textViewCityManhole);
         userIDTextView = findViewById(R.id.textViewUserID);
         feedbackView = findViewById(R.id.textViewFeedback);
         nextButton = findViewById(R.id.buttonNext);
@@ -43,7 +47,11 @@ public class FeedbackActivity extends Activity {
         filenames = intent.getStringArrayExtra("filenames");
         feedbackString = intent.getStringExtra("feedback");
         userID = intent.getStringExtra("user_id");
+        cityID = intent.getStringExtra("city_id");
+        manholeID = intent.getStringExtra("manhole_id");
+        cityManholeTextView.setText(manholeID + ", " + cityID);
         userIDTextView.setText("Hi " + userID + "!");
+
 
         feedbackView.setText(feedbackString);
     }
@@ -79,7 +87,7 @@ public class FeedbackActivity extends Activity {
 
     /** return to the main activity to communicate with arduino */
     public void onClickNext(View view) {
-        Intent nextIntent = new Intent(FeedbackActivity.this, ManholeSelectionActivity.class);
+        Intent nextIntent = new Intent(FeedbackActivity.this, CitySelectionActivity.class);
         nextIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
         nextIntent.putExtra("user_id", userID);
         startActivity(nextIntent);

@@ -9,6 +9,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.location.Location;
 import android.location.LocationManager;
 import android.provider.MediaStore;
@@ -22,6 +23,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
@@ -52,15 +54,18 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DeploymentActivity extends Activity  implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener {
+public class InstallActivity extends Activity  implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener {
 
+    TextView textViewCityManhole;
     TextView userIDTextView;
     EditText editTextBoxID;
+    CheckBox checkBoxNewBatteryInstalled;
+    CheckBox checkBoxNewPanelInstalled;
+    CheckBox checkBoxInletAssemblyPluggedIn;
     EditText editTextResetTime;
     EditText editTextLightTurnedGreen;
     Spinner lightStatusSpinner;
     ArrayAdapter<String> lightStatusSpinnerAdapter;
-    ImageView imageViewRefreshPlateQRCode;
     EditText editTextNotes;
 
     // cloud firestore database
@@ -86,7 +91,7 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_deployment);
+        setContentView(R.layout.activity_install);
 
         //FOR LOCATION SERVICES
         googleApiClient = new GoogleApiClient.Builder(this)
@@ -98,11 +103,14 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
         checkLocation(); //check whether location service is enable or not in your  phone
 
         // ui elements
+        textViewCityManhole = (TextView) findViewById(R.id.textViewCityManhole);
         userIDTextView = (TextView) findViewById(R.id.textViewUserID);
         editTextBoxID = (EditText) findViewById(R.id.editTextBoxID);
+        checkBoxNewBatteryInstalled = (CheckBox) findViewById(R.id.checkBoxNewBatteryInstalled);
+        checkBoxNewPanelInstalled = (CheckBox) findViewById(R.id.checkBoxNewPanelInstalled);
+        checkBoxInletAssemblyPluggedIn= (CheckBox) findViewById(R.id.checkBoxInletAssemblyPluggedIn);
         editTextResetTime = (EditText) findViewById(R.id.editTextResetTime);
         editTextLightTurnedGreen = (EditText) findViewById(R.id.editTextLightTurnedGreen);
-        imageViewRefreshPlateQRCode = (ImageView) findViewById(R.id.imageViewRefreshPlateQRCode);
         editTextNotes = (EditText) findViewById(R.id.editTextNotes);
 
         ArrayList<String> lightStatusOptions = new ArrayList();
@@ -121,6 +129,7 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
         userID = intent.getStringExtra("user_id");
         cityID = intent.getStringExtra("city_id");
         manholeID = intent.getStringExtra("manhole_id");
+        textViewCityManhole.setText(manholeID + ", " + cityID);
         userIDTextView.setText("Hi " + userID + "!");
 
         // create clock selectors for reset time and light turned green
@@ -131,7 +140,7 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
                 int hour = cldr.get(Calendar.HOUR_OF_DAY);
                 int minutes = cldr.get(Calendar.MINUTE);
                 // time picker dialog
-                TimePickerDialog picker = new TimePickerDialog(DeploymentActivity.this,
+                TimePickerDialog picker = new TimePickerDialog(InstallActivity.this,
                         R.style.SpinnerTimePickerStyle,
                         new TimePickerDialog.OnTimeSetListener() {
                             @Override
@@ -154,7 +163,7 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
                 int hour = cldr.get(Calendar.HOUR_OF_DAY);
                 int minutes = cldr.get(Calendar.MINUTE);
                 // time picker dialog
-                TimePickerDialog picker = new TimePickerDialog(DeploymentActivity.this,
+                TimePickerDialog picker = new TimePickerDialog(InstallActivity.this,
                         R.style.SpinnerTimePickerStyle,
                         new TimePickerDialog.OnTimeSetListener() {
                             @Override
@@ -170,17 +179,6 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
             }
         });
 
-        // create camera dialog for refresh plate QR code editText
-        imageViewRefreshPlateQRCode.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-                    startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
-                }
-            }
-        });
-
         // handle spinner selections
         lightStatusSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -193,15 +191,6 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
 
         });
 
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-            Bundle extras = data.getExtras();
-            Bitmap imageBitmap = (Bitmap) extras.get("data");
-            imageView.setImageBitmap(imageBitmap);
-        }
     }
 
     @Override
@@ -230,10 +219,13 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
             locationString = location.getLatitude() + " " + location.getLongitude();
         }
 
-        DeploymentLog log = new DeploymentLog(
+        InstallLog log = new InstallLog(
                 userID,
                 locationString,
                 editTextBoxID.getText().toString(),
+                checkBoxNewBatteryInstalled.isChecked(),
+                checkBoxNewPanelInstalled.isChecked(),
+                checkBoxInletAssemblyPluggedIn.isChecked(),
                 editTextResetTime.getText().toString(),
                 editTextLightTurnedGreen.getText().toString(),
                 lightStatusString,
@@ -241,28 +233,28 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
         );
 
         String timeStamp = getDateCurrentTimeZone(System.currentTimeMillis() / 1000);
-        Map<String, String> deployment = new HashMap<>();
-        deployment.put("date", timeStamp);
+        Map<String, String> install = new HashMap<>();
+        install.put("date", timeStamp);
 
         db = FirebaseFirestore.getInstance();
 
-        // create deployment
+        // create install
         db.collection("cities")
                 .document(cityID)
                 .collection("manholes")
                 .document(manholeID)
                 .collection("deployments")
                 .document(timeStamp)
-                .set(deployment);
+                .set(install);
 
-        // log deployment information
+        // log install information
         db.collection("cities")
                 .document(cityID)
                 .collection("manholes")
                 .document(manholeID)
                 .collection("deployments")
                 .document(timeStamp)
-                .collection("deployment log")
+                .collection("install log")
                 .document("data")
                 .set(log)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
@@ -279,7 +271,7 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
                 });
 
 
-        Toast.makeText(this, "Deployment log sent to database", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Install log sent to database", Toast.LENGTH_SHORT).show();
         finish();
     }
 
@@ -299,7 +291,7 @@ public class DeploymentActivity extends Activity  implements GoogleApiClient.Con
     }
 
     public void onClickLogout(View view) {
-        Intent logoutIntent = new Intent(DeploymentActivity.this, LoginActivity.class);
+        Intent logoutIntent = new Intent(InstallActivity.this, LoginActivity.class);
         logoutIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
         logoutIntent.putExtra("logout", true);
         startActivity(logoutIntent);

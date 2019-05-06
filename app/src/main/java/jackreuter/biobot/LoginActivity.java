@@ -33,7 +33,9 @@ public class LoginActivity extends Activity {
         userIDEditText = findViewById(R.id.editTextUserID);
 
         //REQUEST PERMISSIONS
-        String[] permissions = {Manifest.permission.ACCESS_COARSE_LOCATION,
+        String[] permissions = {
+                Manifest.permission.CAMERA,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.READ_EXTERNAL_STORAGE,
                 Manifest.permission.INTERNET,
@@ -54,9 +56,9 @@ public class LoginActivity extends Activity {
 
         //CHECK IF LOGGED IN
         } else if (pref.contains("user_id")) {
-            Intent manholeSelectionActivityIntent = new Intent(LoginActivity.this, ManholeSelectionActivity.class);
-            manholeSelectionActivityIntent.putExtra("user_id", pref.getString("user_id", ""));
-            startActivity(manholeSelectionActivityIntent);
+            Intent citySelectionActivityIntent = new Intent(LoginActivity.this, CitySelectionActivity.class);
+            citySelectionActivityIntent.putExtra("user_id", pref.getString("user_id", ""));
+            startActivity(citySelectionActivityIntent);
         }
 
     }
@@ -70,9 +72,9 @@ public class LoginActivity extends Activity {
             editor.putString("user_id", textEntered);
             editor.apply();
 
-            Intent manholeSelectionActivityIntent = new Intent(LoginActivity.this, ManholeSelectionActivity.class);
-            manholeSelectionActivityIntent.putExtra("user_id", textEntered);
-            startActivity(manholeSelectionActivityIntent);
+            Intent citySelectionActivityIntent = new Intent(LoginActivity.this, CitySelectionActivity.class);
+            citySelectionActivityIntent.putExtra("user_id", textEntered);
+            startActivity(citySelectionActivityIntent);
         }
     }
 }

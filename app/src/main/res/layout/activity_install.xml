@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".DeploymentActivity">
+    tools:context=".InstallActivity">
 
     <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
@@ -24,7 +24,7 @@
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
             android:textStyle="italic"
-            android:layout_above="@id/textViewBoxID"
+            android:layout_above="@id/textViewCityManhole"
             android:layout_toLeftOf="@id/buttonLogout"
             />
 
@@ -45,52 +45,121 @@
             />
 
         <TextView
-            android:id="@+id/textViewBoxID"
+            android:id="@+id/textViewCityManhole"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_marginLeft="@dimen/outer_margin"
             android:layout_marginTop="@dimen/outer_margin"
+            android:layout_marginRight="@dimen/outer_margin"
+            android:layout_alignParentRight="true"
+            android:textSize="@dimen/font_size_large"
+            android:textColor="@color/text_color"
+            android:textStyle="italic"
+            android:layout_below="@+id/buttonLogout"
+            />
+
+        <TextView
+            android:id="@+id/textViewBoxID"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:layout_marginTop="@dimen/inner_margin"
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
             android:text="@string/box_id"
             android:textStyle="bold"
-            android:layout_below="@+id/buttonLogout"
+            android:layout_below="@+id/textViewCityManhole"
             />
 
         <EditText
             android:id="@+id/editTextBoxID"
             android:layout_width="match_parent"
-            android:layout_marginLeft="@dimen/outer_margin"
-            android:layout_marginRight="@dimen/outer_margin"
             android:layout_marginBottom="@dimen/inner_margin_medium"
+            android:layout_marginRight="@dimen/outer_margin"
+            android:layout_marginLeft="@dimen/outer_margin"
             android:padding="@dimen/padding"
             android:layout_height="wrap_content"
             android:background="@color/white"
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
-            android:layout_below="@id/textViewBoxID"
+            android:layout_below="@+id/textViewBoxID"
+            />
+
+        <CheckBox
+            android:id="@+id/checkBoxNewBatteryInstalled"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:layout_below="@+id/editTextBoxID"
+            />
+
+        <TextView
+            android:id="@+id/textViewNewBatteryInstalled"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/new_battery_installed"
+            android:textSize="@dimen/font_size_large"
+            android:textColor="@color/text_color"
+            android:layout_below="@id/editTextBoxID"
+            android:layout_toRightOf="@+id/checkBoxNewBatteryInstalled"
+            />
+
+        <CheckBox
+            android:id="@+id/checkBoxNewPanelInstalled"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:layout_below="@+id/checkBoxNewBatteryInstalled"
+            />
+
+        <TextView
+            android:id="@+id/textViewNewPanelInstalled"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/new_panel_installed"
+            android:textSize="@dimen/font_size_large"
+            android:textColor="@color/text_color"
+            android:layout_below="@id/checkBoxNewBatteryInstalled"
+            android:layout_toRightOf="@+id/checkBoxNewPanelInstalled"
+            />
+
+        <CheckBox
+            android:id="@+id/checkBoxInletAssemblyPluggedIn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:layout_below="@+id/checkBoxNewPanelInstalled"
+            />
+
+        <TextView
+            android:id="@+id/textViewInletAssemblyPluggedIn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/inlet_assembly_plugged_in"
+            android:textSize="@dimen/font_size_large"
+            android:textColor="@color/text_color"
+            android:layout_below="@id/checkBoxNewPanelInstalled"
+            android:layout_toRightOf="@+id/checkBoxInletAssemblyPluggedIn"
             />
 
         <TextView
             android:id="@+id/textViewResetTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
             android:layout_marginLeft="@dimen/outer_margin"
+            android:layout_marginTop="@dimen/inner_margin"
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
             android:text="@string/reset_time"
             android:textStyle="bold"
-            android:layout_below="@id/editTextBoxID"
+            android:layout_below="@id/checkBoxInletAssemblyPluggedIn"
             />
 
         <EditText
             android:id="@+id/editTextResetTime"
             android:layout_width="match_parent"
+            android:layout_marginBottom="@dimen/inner_margin_medium"
             android:layout_marginLeft="@dimen/outer_margin"
             android:layout_marginRight="@dimen/outer_margin"
-            android:layout_marginBottom="@dimen/inner_margin_medium"
             android:padding="@dimen/padding"
             android:layout_height="wrap_content"
             android:background="@color/white"
@@ -104,7 +173,6 @@
             android:id="@+id/textViewLightTurnedGreen"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
             android:layout_marginLeft="@dimen/outer_margin"
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
@@ -116,11 +184,11 @@
         <EditText
             android:id="@+id/editTextLightTurnedGreen"
             android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:layout_marginLeft="@dimen/outer_margin"
             android:layout_marginRight="@dimen/outer_margin"
-            android:layout_marginBottom="@dimen/inner_margin_medium"
+            android:layout_marginBottom="@dimen/inner_margin"
             android:padding="@dimen/padding"
-            android:layout_height="wrap_content"
             android:background="@color/white"
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
@@ -155,34 +223,6 @@
             />
 
         <TextView
-            android:id="@+id/textViewRefreshPlateQRCode"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_marginLeft="@dimen/outer_margin"
-            android:textSize="@dimen/font_size_large"
-            android:textColor="@color/text_color"
-            android:text="@string/refresh_plate_qr_code"
-            android:textStyle="bold"
-            android:layout_below="@id/lightStatusSpinner"
-            />
-
-        <ImageView
-            android:id="@+id/imageViewRefreshPlateQRCode"
-            android:layout_width="match_parent"
-            android:layout_marginLeft="@dimen/outer_margin"
-            android:layout_marginRight="@dimen/outer_margin"
-            android:layout_marginBottom="@dimen/inner_margin_medium"
-            android:padding="@dimen/padding"
-            android:layout_height="wrap_content"
-            android:background="@color/white"
-            android:textSize="@dimen/font_size_large"
-            android:textColor="@color/text_color"
-            android:focusable="false"
-            android:layout_below="@id/textViewRefreshPlateQRCode"
-            />
-
-        <TextView
             android:id="@+id/textViewNotes"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -192,7 +232,7 @@
             android:textColor="@color/text_color"
             android:text="@string/notes"
             android:textStyle="bold"
-            android:layout_below="@+id/editTextRefreshPlateQRCode"
+            android:layout_below="@+id/lightStatusSpinner"
             />
 
         <EditText

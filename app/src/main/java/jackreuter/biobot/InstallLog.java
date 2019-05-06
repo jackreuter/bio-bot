@@ -1,18 +1,24 @@
 package jackreuter.biobot;
 
-public class DeploymentLog {
+public class InstallLog {
     String deploymentUser;
     String deploymentGPS;
     String boxID;
+    Boolean newBatteryInstalled;
+    Boolean newPanelInstalled;
+    Boolean inletAssemblyPluggedIn;
     String resetTime;
     String lightTurnedGreen;
     String lightStatus;
     String deploymentNotes;
 
-    public DeploymentLog(
+    public InstallLog(
             String _deploymentUser,
             String _deploymentGPS,
             String _boxID,
+            Boolean _newBatteryInstalled,
+            Boolean _newPanelInstalled,
+            Boolean _inletAssemblyPluggedIn,
             String _resetTime,
             String _lightTurnedGreen,
             String _lightStatus,
@@ -21,6 +27,9 @@ public class DeploymentLog {
         deploymentUser = _deploymentUser;
         deploymentGPS = _deploymentGPS;
         boxID = _boxID;
+        newBatteryInstalled = _newBatteryInstalled;
+        newPanelInstalled = _newPanelInstalled;
+        inletAssemblyPluggedIn = _inletAssemblyPluggedIn;
         resetTime = _resetTime;
         lightTurnedGreen = _lightTurnedGreen;
         lightStatus = _lightStatus;
@@ -37,6 +46,15 @@ public class DeploymentLog {
 
             case "boxID":
                 return "Box ID";
+
+            case "newBatteryInstalled":
+                return "New battery installed";
+
+            case "newPanelInstalled":
+                return "New panel installed";
+
+            case "inletAssemblyPluggedIn":
+                return "Inlet assembly plugged in";
 
             case "resetTime":
                 return "Reset time";

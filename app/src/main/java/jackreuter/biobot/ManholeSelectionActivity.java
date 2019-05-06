@@ -1,55 +1,61 @@
 package jackreuter.biobot;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
+import android.support.v4.widget.TextViewCompat;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Spinner;
-import android.widget.SpinnerAdapter;
+import android.widget.ImageView;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.common.util.CollectionUtils;
-import com.google.android.gms.common.util.MapUtils;
+import com.bumptech.glide.Glide;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.CollectionReference;
-import com.google.firebase.firestore.DocumentChange;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.storage.FileDownloadTask;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
-import org.w3c.dom.Document;
-
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
-import java.util.Map;
+import java.util.Date;
 
 public class ManholeSelectionActivity extends Activity {
 
-    // Cloud Firestore database
+    // Cloud Firestore database and storage
     FirebaseFirestore db;
+    FirebaseStorage storage;
 
     // UI elements
     TextView userIDTextView;
-    Spinner citySpinner;
-    Spinner manholeSpinner;
+    RadioGroup manholeRadioGroup;
+    ImageView mapImageView;
 
     // Global variables
     String cityID;
     String manholeID;
     String userID;
-    String deploymentDate;
-    final int DEPLOYMENT_LOG_SIZE = 7;
+    String lastInstallDate;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,25 +64,23 @@ public class ManholeSelectionActivity extends Activity {
 
         // create UI
         userIDTextView = (TextView) findViewById(R.id.textViewUserID);
-        citySpinner = (Spinner) findViewById(R.id.city_spinner);
-        manholeSpinner = (Spinner) findViewById(R.id.manhole_spinner);
-        final ArrayAdapter citySpinnerAdapter = new ArrayAdapter<String>(this, R.layout.spinner_item, new ArrayList<String>());
-        final ArrayAdapter manholeSpinnerAdapter = new ArrayAdapter<String>(this, R.layout.spinner_item, new ArrayList<String>());
-        citySpinnerAdapter.setDropDownViewResource(R.layout.spinner_item);
-        citySpinner.setAdapter(citySpinnerAdapter);
-        manholeSpinnerAdapter.setDropDownViewResource(R.layout.spinner_item);
-        manholeSpinner.setAdapter(manholeSpinnerAdapter);
+        manholeRadioGroup = (RadioGroup) findViewById(R.id.radioGroupManholes);
+        mapImageView = (ImageView) findViewById(R.id.imageViewMap);
 
         Intent intent = getIntent();
         userID = intent.getStringExtra("user_id");
+        cityID = intent.getStringExtra("city_id");
         userIDTextView.setText("Hi " + userID + "!");
 
         // CLOUD FIRESTORE DATABASE SYNC
         db = FirebaseFirestore.getInstance();
+        storage = FirebaseStorage.getInstance();
 
-        // listen for changes in database to repopulate spinner
-        final CollectionReference citiesRef = db.collection("cities");
-        citiesRef.addSnapshotListener(new EventListener<QuerySnapshot>() {
+        // listen for changes in database to repopulate radio buttons
+        final CollectionReference manholesRef = db.collection("cities")
+                .document(cityID)
+                .collection("manholes");
+        manholesRef.addSnapshotListener(new EventListener<QuerySnapshot>() {
             @Override
             public void onEvent(@javax.annotation.Nullable QuerySnapshot snapshot, @javax.annotation.Nullable FirebaseFirestoreException e) {
                 if (e != null) {
@@ -85,58 +89,68 @@ public class ManholeSelectionActivity extends Activity {
                 }
 
                 if (snapshot != null) {
-                    updateSpinner(citiesRef, citySpinnerAdapter);
+                    // clear views
+                    manholeRadioGroup.removeAllViews();
+
+                    // repopulate
+                    for (DocumentSnapshot document : snapshot.getDocuments()) {
+                        RadioButton manholeRadioButton = new RadioButton(ManholeSelectionActivity.this);
+                        manholeRadioButton.setTextColor(getResources().getColor(R.color.text_color));
+                        manholeRadioButton.setText(document.getId());
+                        manholeRadioButton.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.font_size_small));
+                        manholeRadioGroup.addView(manholeRadioButton);
+                    }
+
                 } else {
                     Log.d("FIRESTORE", "Current data: null");
                 }
             }
         });
 
-        // handle spinner selections
-        citySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        // handle radio button selection to get map image and update manholeID
+        manholeRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener()
+        {
             @Override
-            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-                // clear and populate manhole spinner
-                cityID = parentView.getItemAtPosition(position).toString();
-                final CollectionReference manholesRef = db.collection("cities")
+            public void onCheckedChanged(RadioGroup group, int checkedId) {
+                // checkedId is the RadioButton selected
+                RadioButton selectedRadioButton = (RadioButton) findViewById(checkedId);
+                manholeID = selectedRadioButton.getText().toString();
+                db.collection("cities")
                         .document(cityID)
-                        .collection("manholes");
-                manholesRef.addSnapshotListener(new EventListener<QuerySnapshot>() {
+                        .collection("manholes")
+                        .document(manholeID)
+                        .get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
                     @Override
-                    public void onEvent(@javax.annotation.Nullable QuerySnapshot snapshot, @javax.annotation.Nullable FirebaseFirestoreException e) {
-                        if (e != null) {
-                            Log.w("FIRESTORE", "Listen failed.", e);
-                            return;
-                        }
+                    public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                        if (task.isSuccessful()) {
+                            DocumentSnapshot document = task.getResult();
+                            if (document.exists()) {
+                                // document found
+                                // load map image
+                                String mapURL = document.getString("mapURL");
+                                if (mapURL == null) {
+                                    mapImageView.setImageResource(0);
+                                } else {
+                                    GlideApp.with(ManholeSelectionActivity.this)
+                                            .load(mapURL)
+                                            .into(mapImageView);
+                                }
 
-                        if (snapshot != null) {
-                            updateSpinner(manholesRef, manholeSpinnerAdapter);
+                            } else {
+                                // no document found
+                            }
                         } else {
-                            Log.d("FIRESTORE", "Current data: null");
+                            // error
                         }
                     }
                 });
-            }
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parentView) {
-                // your code here
-            }
-
-        });
-
-        // handle spinner selections
-        manholeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-                // listen for changes in selected manhole deployments to check if deployed
-                manholeID = parentView.getItemAtPosition(position).toString();
-                final CollectionReference deploymentsRef = db.collection("cities")
+                final CollectionReference installsRef = db.collection("cities")
                         .document(cityID)
                         .collection("manholes")
                         .document(manholeID)
                         .collection("deployments");
-                deploymentsRef.addSnapshotListener(new EventListener<QuerySnapshot>() {
+                installsRef.addSnapshotListener(new EventListener<QuerySnapshot>() {
                     @Override
                     public void onEvent(@javax.annotation.Nullable QuerySnapshot snapshot, @javax.annotation.Nullable FirebaseFirestoreException e) {
                         if (e != null) {
@@ -145,16 +159,16 @@ public class ManholeSelectionActivity extends Activity {
                         }
 
                         if (snapshot != null) {
-                            ArrayList<String> deploymentDates = new ArrayList<String>();
+                            ArrayList<String> installDates = new ArrayList<String>();
                             for (DocumentSnapshot document : snapshot.getDocuments()) {
-                                deploymentDates.add(document.getId());
+                                installDates.add(document.getId());
                             }
-                            if (deploymentDates.size() > 0) {
-                                Collections.sort(deploymentDates);
-                                Collections.reverse(deploymentDates);
-                                deploymentDate = deploymentDates.get(0);
+                            if (installDates.size() > 0) {
+                                Collections.sort(installDates);
+                                Collections.reverse(installDates);
+                                lastInstallDate = installDates.get(0);
                             } else {
-                                deploymentDate = "";
+                                lastInstallDate = "";
                             }
                         } else {
                             Log.d("FIRESTORE", "Current data: null");
@@ -162,78 +176,74 @@ public class ManholeSelectionActivity extends Activity {
                     }
                 });
             }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parentView) {
-                // your code here
-            }
-
         });
 
     }
 
-    // check database for collection, update spinner with the results
-    public void updateSpinner(CollectionReference collection, final ArrayAdapter spinnerAdapter) {
-        spinnerAdapter.clear();
-        spinnerAdapter.notifyDataSetChanged();
-        collection.get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        if (task.isSuccessful()) {
-                            for (QueryDocumentSnapshot document : task.getResult()) {
-                                spinnerAdapter.add(document.getId());
-                                spinnerAdapter.notifyDataSetChanged();
-                            }
-                        } else {
-                            //Log.w("data ayy", "Error getting documents.", task.getException());
-                        }
-                    }
-                });
+    // start new deployment
+    public void onClickInstall(View view) {
+        if (manholeID == null) {
+            Toast.makeText(this, "Must select a manhole location", Toast.LENGTH_SHORT).show();
+        } else {
+            Intent installActivityIntent = new Intent(ManholeSelectionActivity.this, InstallActivity.class);
+            installActivityIntent.putExtra("user_id", userID);
+            installActivityIntent.putExtra("city_id", cityID);
+            installActivityIntent.putExtra("manhole_id", manholeID);
+            startActivity(installActivityIntent);
+        }
     }
 
-    public void onClickContinue(View view) {
-        if (deploymentDate.equals("")) {
-            Intent deploymentActivityIntent = new Intent(ManholeSelectionActivity.this, DeploymentActivity.class);
-            deploymentActivityIntent.putExtra("user_id", userID);
-            deploymentActivityIntent.putExtra("city_id", cityID);
-            deploymentActivityIntent.putExtra("manhole_id", manholeID);
-            startActivity(deploymentActivityIntent);
-
-        } else {
-            db.collection("cities")
-                    .document(cityID)
-                    .collection("manholes")
-                    .document(manholeID)
-                    .collection("deployments")
-                    .document(deploymentDate)
-                    .collection("retrieval log")
-                    .document("data")
-                    .get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-                @Override
-                public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                    if (task.isSuccessful()) {
-                        DocumentSnapshot document = task.getResult();
-                        // if most recent deployment has not been retrieved then start retrieval activity
-                        if (document.getData() == null) {
+    // start retrieval for past deployment
+    public void onClickRetrieve(View view) {
+        if (manholeID == null) {
+            Toast.makeText(this, "Must select a manhole location", Toast.LENGTH_SHORT).show();
+        } else if (lastInstallDate.equals("")) {
+            AlertDialog alertDialog = new AlertDialog.Builder(ManholeSelectionActivity.this).create();
+            alertDialog.setTitle("No install log found");
+            alertDialog.setMessage("Are you sure this is the correct manhole location?");
+            alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "YES",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            lastInstallDate = getDateCurrentTimeZone(System.currentTimeMillis() / 1000);
                             Intent retrievalActivityIntent = new Intent(ManholeSelectionActivity.this, RetrievalActivity.class);
                             retrievalActivityIntent.putExtra("user_id", userID);
                             retrievalActivityIntent.putExtra("city_id", cityID);
                             retrievalActivityIntent.putExtra("manhole_id", manholeID);
-                            retrievalActivityIntent.putExtra("deployment_date", deploymentDate);
+                            retrievalActivityIntent.putExtra("install_date", lastInstallDate);
                             startActivity(retrievalActivityIntent);
-                        } else {
-                            Intent deploymentActivityIntent = new Intent(ManholeSelectionActivity.this, DeploymentActivity.class);
-                            deploymentActivityIntent.putExtra("user_id", userID);
-                            deploymentActivityIntent.putExtra("city_id", cityID);
-                            deploymentActivityIntent.putExtra("manhole_id", manholeID);
-                            startActivity(deploymentActivityIntent);
                         }
-                    } else {
-                    }
-                }
-            });
+                    });
+            alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "NO",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                        }
+                    });
+
+            alertDialog.show();
+        } else {
+            Intent retrievalActivityIntent = new Intent(ManholeSelectionActivity.this, RetrievalActivity.class);
+            retrievalActivityIntent.putExtra("user_id", userID);
+            retrievalActivityIntent.putExtra("city_id", cityID);
+            retrievalActivityIntent.putExtra("manhole_id", manholeID);
+            retrievalActivityIntent.putExtra("install_date", lastInstallDate);
+            startActivity(retrievalActivityIntent);
         }
+    }
+
+    /** get timestamp and format*/
+    public String getDateCurrentTimeZone(long timestamp) {
+        try {
+            Calendar calendar = Calendar.getInstance();
+            //TimeZone tz = TimeZone.getDefault();
+            calendar.setTimeInMillis(timestamp * 1000);
+            //calendar.add(Calendar.MILLISECOND, tz.getOffset(calendar.getTimeInMillis()));
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            Date currentTimeZone = (Date) calendar.getTime();
+            return sdf.format(currentTimeZone);
+        } catch (Exception e) {
+        }
+        return "";
     }
 
     public void onClickLogout(View view) {

@@ -7,14 +7,23 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.location.Location;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.ContactsContract;
+import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
+import android.text.InputType;
 import android.view.View;
+import android.widget.CheckBox;
+import android.widget.ImageView;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.Toast;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
@@ -75,8 +84,12 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
 
     // UI
     Button logoutButton, readButton;
-    TextView userIDTextView, deploymentLogTextView, notesTextView;
+    TextView cityManholeTextView, userIDTextView, installLogTextView, notesTextView;
     EditText notesEditText;
+    Button buttonScanQrCode, buttonDone;
+    RadioGroup radioGroupGreenLedStatus, radioGroupSamplePlacedOnIce;
+    ImageView imageViewScanQrCodeCheck, imageViewReadDataCheck;
+    ImageView imageViewGreedLedStatusAlert, imageViewScanQrCodeAlert, imageViewSamplePlacedOnIceAlert, imageViewReadDataAlert;
 
     // arduinoUSB
     public final String ACTION_USB_PERMISSION = "com.hariharan.arduinousb.USB_PERMISSION";
@@ -93,9 +106,16 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
     String userID;
     String cityID;
     String manholeID;
-    String deploymentDate;
+    String installDate;
+    String greenLedStatus;
+    String samplePlacedOnIce;
+    String qrCode;
     Boolean transmissionEnded;
     Boolean serialConnectionOpen;
+
+    // QR intent request
+    static final int QR_INTENT_REQUEST_CODE = 0;
+
 
     /** callback used to communicate with arduino, takes arduino data and parses into
      filenames[] and contents[] */
@@ -134,7 +154,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                         feedBackString += data + "\n\n";
                     }
                 } else {
-                    feedBackString += "No data received\n\n";
+                    //feedBackString += "No data received\n\n";
                 }
                 transmissionEnded = true;
             } catch (UnsupportedEncodingException e) {
@@ -241,42 +261,87 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
 
         //CREATE UI
         logoutButton = (Button) findViewById(R.id.buttonLogout);
+        cityManholeTextView = (TextView) findViewById(R.id.textViewCityManhole);
         userIDTextView = (TextView) findViewById(R.id.textViewUserID);
-        deploymentLogTextView = (TextView) findViewById(R.id.textViewDeploymentLog);
+        installLogTextView = (TextView) findViewById(R.id.textViewInstallLog);
         notesTextView = (TextView) findViewById(R.id.textViewNotes);
         notesEditText = (EditText) findViewById(R.id.editTextNotes);
         readButton = (Button) findViewById(R.id.buttonRead);
+        buttonDone = (Button) findViewById(R.id.buttonDone);
+        buttonScanQrCode = (Button) findViewById(R.id.buttonScanQrCode);
+        imageViewScanQrCodeCheck = (ImageView) findViewById(R.id.imageViewScanQrCodeCheck);
+        imageViewReadDataCheck = (ImageView) findViewById(R.id.imageViewReadDataCheck);
+        imageViewGreedLedStatusAlert = (ImageView) findViewById(R.id.imageViewGreenLedStatusAlert);
+        imageViewScanQrCodeAlert = (ImageView) findViewById(R.id.imageViewScanQrCodeAlert);
+        imageViewSamplePlacedOnIceAlert = (ImageView) findViewById(R.id.imageViewSamplePlacedOnIceAlert);
+        imageViewReadDataAlert = (ImageView) findViewById(R.id.imageViewReadDataAlert);
+        radioGroupGreenLedStatus = (RadioGroup) findViewById(R.id.radioGroupGreenLedStatus);
+        radioGroupSamplePlacedOnIce = (RadioGroup) findViewById(R.id.radioGroupSamplePlacedOnIce);
 
+        // UI progress checks set to invisible
+        imageViewScanQrCodeCheck.setVisibility(View.INVISIBLE);
+        imageViewReadDataCheck.setVisibility(View.INVISIBLE);
+
+        // get information from previous screens and set user ID view
         Intent intent = getIntent();
         userID = intent.getStringExtra("user_id");
         cityID = intent.getStringExtra("city_id");
         manholeID = intent.getStringExtra("manhole_id");
-        deploymentDate = intent.getStringExtra("deployment_date");
+        installDate = intent.getStringExtra("install_date");
+        cityManholeTextView.setText(manholeID + ", " + cityID);
         userIDTextView.setText("Hi " + userID + "!");
 
-        deploymentLogTextView.setText("");
+        // get install log from database and set text view
+        installLogTextView.setText("");
         db.collection("cities")
                 .document(cityID)
                 .collection("manholes")
                 .document(manholeID)
                 .collection("deployments")
-                .document(deploymentDate)
-                .collection("deployment log")
+                .document(installDate)
+                .collection("install log")
                 .document("data")
                 .get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
                     @Override
                     public void onComplete(@NonNull Task<DocumentSnapshot> task) {
                         if (task.isSuccessful()) {
-                            deploymentLogTextView.append("Device deployed on: " + deploymentDate + "\n\n");
                             DocumentSnapshot document = task.getResult();
-                            Map<String, Object> deploymentData = document.getData();
-                            for (String key : deploymentData.keySet()) {
-                                deploymentLogTextView.append(DeploymentLog.getFieldName(key) + ":   " + deploymentData.get(key) + "\n");
+                            Map<String, Object> installData = document.getData();
+                            if (installData == null) {
+                                installLogTextView.append("No install log found");
+                            } else {
+                                Log.d("ayy", installData.keySet()+"");
+                                installLogTextView.append("Device installed on: " + installDate + "\n");
+                                installLogTextView.append("Installed by: " + installData.get("deploymentUser") + "\n");
+                                installLogTextView.append("Notes: " + installData.get("deploymentNotes"));
                             }
                         }
                     }
                 });
 
+        // set listener for green LED status radio buttons
+        radioGroupGreenLedStatus.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener()
+        {
+            public void onCheckedChanged(RadioGroup group, int checkedId)
+            {
+                imageViewGreedLedStatusAlert.setVisibility(View.INVISIBLE);
+                RadioButton checkedRadioButton = (RadioButton) group.findViewById(checkedId);
+                greenLedStatus = checkedRadioButton.getText().toString();
+                checkIfDone();
+            }
+        });
+
+        // set listener for sample placed on ice radio buttons
+        radioGroupSamplePlacedOnIce.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener()
+        {
+            public void onCheckedChanged(RadioGroup group, int checkedId)
+            {
+                imageViewSamplePlacedOnIceAlert.setVisibility(View.INVISIBLE);
+                RadioButton checkedRadioButton = (RadioButton) group.findViewById(checkedId);
+                samplePlacedOnIce = checkedRadioButton.getText().toString();
+                checkIfDone();
+            }
+        });
 
         //IF SCREEN ROTATED OR APP PAUSED FOR SOME REASON
         if (savedInstanceState != null) {
@@ -289,7 +354,21 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         feedBackString = "";
         transmissionEnded = false;
         serialConnectionOpen = false;
+    }
 
+    // save QR code image
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == QR_INTENT_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                String text = data.getDataString();
+                qrCode = text;
+                imageViewScanQrCodeCheck.setVisibility(View.VISIBLE);
+                imageViewScanQrCodeAlert.setVisibility(View.INVISIBLE);
+                checkIfDone();
+            }
+        }
     }
 
     @Override
@@ -301,9 +380,6 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
         filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
         registerReceiver(broadcastReceiver, filter);
-
-        //TRY TO CONNECT TO ARDUINO
-        connectArduino();
 
         //CONNECT TO LOCATION SERVICES
         if (googleApiClient != null) {
@@ -325,6 +401,12 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         if (googleApiClient.isConnected()) {
             googleApiClient.disconnect();
         }
+    }
+
+    /** open camera to scan qr code */
+    public void onClickScanQrCode(View view) {
+        Intent qrCodeScannerActivityIntent = new Intent(RetrievalActivity.this, QrCodeScannerActivity.class);
+        RetrievalActivity.this.startActivityForResult(qrCodeScannerActivityIntent, QR_INTENT_REQUEST_CODE);
     }
 
     /** send cue to read file from arduino */
@@ -349,28 +431,29 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                 if (location == null) {
                     Toast.makeText(RetrievalActivity.this, "Location not detected, wait and try again", Toast.LENGTH_LONG).show();
                 } else {
-                    locationString = location.getLatitude() + " " + location.getLongitude();
-                    /**
-                    //save metadata string
-                    String metadataString = "User ID: \t" + userID +
-                            "\nRetrieval date: \t" + getDateCurrentTimeZone(System.currentTimeMillis() / 1000) +
-                            "\nManhole location: \t" + manholeLocation +
-                            "\nGPS coordinates: \t" + locationString +
-                            "\nNotes: \t" + notesEditText.getText().toString() +
-                            "\n";
-                     */
-
-                    //feedBackString += metadataString + "\n";
                     serialPort.write(INQUIRY.getBytes());
-                    notesEditText.getText().clear();
-
                     while (!transmissionEnded) { }
-                    //appendMetadataToFileContents(metadataString);
-                    //save();
-                    saveToDatabase();
+                    imageViewReadDataCheck.setVisibility(View.VISIBLE);
+                    imageViewReadDataAlert.setVisibility(View.INVISIBLE);
+                    checkIfDone();
                 }
             }
         }
+    }
+
+    /** check if all fields complete. if so, activate done button */
+    public void checkIfDone() {
+        if (greenLedStatus != null &&
+            qrCode != null &&
+            samplePlacedOnIce != null &&
+            transmissionEnded) {
+            buttonDone.setEnabled(true);
+        }
+    }
+
+    /** upload data to database and return to manhole selection screen */
+    public void onClickDone(View view) {
+        saveToDatabase();
     }
 
     public void saveToDatabase() {
@@ -384,7 +467,10 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         RetrievalLog log = new RetrievalLog(
                 userID,
                 locationString,
-                notesEditText.getText().toString()
+                greenLedStatus,
+                samplePlacedOnIce,
+                notesEditText.getText().toString(),
+                qrCode
         );
 
         db = FirebaseFirestore.getInstance();
@@ -393,7 +479,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                 .collection("manholes")
                 .document(manholeID)
                 .collection("deployments")
-                .document(deploymentDate)
+                .document(installDate)
                 .collection("retrieval log")
                 .document("data")
                 .set(log)
@@ -417,6 +503,8 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         feedbackActivityIntent.putExtra("filenames", filenames); //Optional parameters
         feedbackActivityIntent.putExtra("feedback", tmpfeedBackString); //Optional parameters
         feedbackActivityIntent.putExtra("user_id", userID);
+        feedbackActivityIntent.putExtra("city_id", cityID);
+        feedbackActivityIntent.putExtra("manhole_id", manholeID);
         RetrievalActivity.this.startActivity(feedbackActivityIntent);
 
     }

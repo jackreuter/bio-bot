@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">BioBot</string>
+    <string name="app_name">Biobot</string>
     <string name="manhole_location">Manhole ID:</string>
     <string name="log_in">Log in</string>
     <string name="log_out">Log out</string>
@@ -10,16 +10,33 @@
     <string name="user_id">Hello! What is your name?</string>
     <string name="notes">Notes:</string>
     <string name="next">Next site</string>
-    <string name="select_city">Select city and manhole location:</string>
     <string name="continue_button">Continue</string>
     <string name="box_id">Box ID:</string>
     <string name="reset_time">Reset time:</string>
     <string name="light_turned_green">Light turned green:</string>
     <string name="log_info">Log info</string>
     <string name="light_status">Light status:</string>
-    <string name="deployment_log_header">Deployment log:</string>
+    <string name="install_log_header">Install log:</string>
     <string name="retrieval_log_header">Retrieval log:</string>
-    <string name="refresh_plate_qr_code">Refresh plate QR code:</string>
+    <string name="refresh_plate_qr_code">QR code:</string>
+    <string name="new_battery_installed">New battery installed</string>
+    <string name="new_panel_installed">New panel installed</string>
+    <string name="inlet_assembly_plugged_in">Inlet assembly plugged in</string>
+    <string name="orange_led_on">Orange LED on</string>
+    <string name="sample_put_on_ice">Sample put on ice</string>
+    <string name="select_manhole">Select a manhole location</string>
+    <string name="select_city">Select a city</string>
+    <string name="install_button">Install</string>
+    <string name="retrieveButton">Retrieve</string>
+    <string name="diagnosis">Diagnosis:</string>
+    <string name="green_led_status">Green LED status</string>
+    <string name="tasks">Tasks:</string>
+    <string name="scan_qr_code">Scan QR code on sample plate</string>
+    <string name="open_device">Open device</string>
+    <string name="sample_placed_on_ice">Sample placed on ice?</string>
+    <string name="plug_in_device">Plug in device and read data</string>
+    <string name="done">Done</string>
+    <string name="scan_code">Scan code</string>
 
     <string-array name="blinking_solid">
         <item>Blinking</item>
