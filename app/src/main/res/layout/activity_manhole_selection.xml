@@ -58,18 +58,25 @@
             android:layout_below="@+id/buttonLogout"
             />
 
-        <RadioGroup
-            android:id="@+id/radioGroupManholes"
+        <ScrollView
+            android:id="@+id/scrollViewManholes"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginLeft="@dimen/outer_margin"
             android:layout_marginRight="@dimen/outer_margin"
-            android:background="@color/white"
+            android:layout_below="@+id/selectManholeTextView"
+            android:layout_above="@+id/imageViewMap"
             android:layout_marginTop="@dimen/inner_margin"
             android:layout_marginBottom="@dimen/inner_margin"
-            android:orientation="vertical"
-            android:layout_below="@+id/selectManholeTextView"
+            >
+            <RadioGroup
+                android:id="@+id/radioGroupManholes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/white"
+                android:orientation="vertical"
             />
+        </ScrollView>
 
         <ImageView
             android:id="@+id/imageViewMap"
@@ -77,7 +84,7 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="@dimen/outer_margin"
             android:layout_marginRight="@dimen/outer_margin"
-            android:layout_below="@+id/radioGroupManholes"
+            android:layout_above="@+id/buttonInstall"
             />
 
         <Button
@@ -85,15 +92,16 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/inner_margin"
+            android:layout_marginBottom="@dimen/outer_margin"
             android:layout_marginLeft="@dimen/outer_margin"
             android:padding="@dimen/padding"
-            android:layout_alignParentLeft="true"
             android:onClick="onClickInstall"
             android:background="@drawable/button"
             android:textSize="@dimen/font_size_large"
             android:text="@string/install_button"
             android:textColor="@color/white"
-            android:layout_below="@+id/imageViewMap"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentBottom="true"
             />
 
         <Button
@@ -101,15 +109,16 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/inner_margin"
+            android:layout_marginBottom="@dimen/outer_margin"
             android:layout_marginRight="@dimen/outer_margin"
             android:padding="@dimen/padding"
-            android:layout_alignParentRight="true"
             android:onClick="onClickRetrieve"
             android:background="@drawable/button"
             android:textSize="@dimen/font_size_large"
             android:text="@string/retrieveButton"
             android:textColor="@color/white"
-            android:layout_below="@+id/imageViewMap"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentBottom="true"
             />
 
     </RelativeLayout>

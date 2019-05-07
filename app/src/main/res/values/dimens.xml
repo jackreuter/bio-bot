@@ -3,6 +3,7 @@
     <dimen name="outer_margin">40dp</dimen>
     <dimen name="inner_margin">10dp</dimen>
     <dimen name="inner_margin_medium">15dp</dimen>
+    <dimen name="indented_margin">60dp</dimen>
     <dimen name="font_size_large">25sp</dimen>
     <dimen name="font_size_small">22sp</dimen>
     <dimen name="font_size_detail">18sp</dimen>

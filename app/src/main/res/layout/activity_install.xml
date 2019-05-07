@@ -70,36 +70,55 @@
             android:layout_below="@+id/textViewCityManhole"
             />
 
-        <EditText
-            android:id="@+id/editTextBoxID"
+        <Spinner
+            android:id="@+id/spinnerBoxID"
             android:layout_width="match_parent"
-            android:layout_marginBottom="@dimen/inner_margin_medium"
+            android:layout_height="wrap_content"
             android:layout_marginRight="@dimen/outer_margin"
             android:layout_marginLeft="@dimen/outer_margin"
-            android:padding="@dimen/padding"
-            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/inner_margin_medium"
             android:background="@color/white"
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
             android:layout_below="@+id/textViewBoxID"
             />
 
+        <TextView
+            android:id="@+id/textViewTodo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:layout_marginTop="@dimen/inner_margin"
+            android:textSize="@dimen/font_size_large"
+            android:textColor="@color/text_color"
+            android:text="@string/todo"
+            android:textStyle="bold"
+            android:layout_below="@+id/spinnerBoxID"
+
+            />
+
         <CheckBox
             android:id="@+id/checkBoxNewBatteryInstalled"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="@dimen/outer_margin"
-            android:layout_below="@+id/editTextBoxID"
+            android:scaleX="1.5"
+            android:scaleY="1.5"
+            android:button="@drawable/checkbox_selector"
+            android:layout_marginLeft="@dimen/indented_margin"
+            android:layout_marginTop="@dimen/padding"
+            android:layout_marginBottom="@dimen/inner_margin_medium"
+            android:layout_below="@+id/textViewTodo"
             />
 
         <TextView
             android:id="@+id/textViewNewBatteryInstalled"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginLeft="@dimen/inner_margin"
             android:text="@string/new_battery_installed"
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
-            android:layout_below="@id/editTextBoxID"
+            android:layout_below="@id/textViewTodo"
             android:layout_toRightOf="@+id/checkBoxNewBatteryInstalled"
             />
 
@@ -107,7 +126,12 @@
             android:id="@+id/checkBoxNewPanelInstalled"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="@dimen/outer_margin"
+            android:scaleX="1.5"
+            android:scaleY="1.5"
+            android:button="@drawable/checkbox_selector"
+            android:layout_marginLeft="@dimen/indented_margin"
+            android:layout_marginTop="@dimen/padding"
+            android:layout_marginBottom="@dimen/inner_margin_medium"
             android:layout_below="@+id/checkBoxNewBatteryInstalled"
             />
 
@@ -115,6 +139,7 @@
             android:id="@+id/textViewNewPanelInstalled"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginLeft="@dimen/inner_margin"
             android:text="@string/new_panel_installed"
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
@@ -126,7 +151,12 @@
             android:id="@+id/checkBoxInletAssemblyPluggedIn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="@dimen/outer_margin"
+            android:scaleX="1.5"
+            android:scaleY="1.5"
+            android:button="@drawable/checkbox_selector"
+            android:layout_marginLeft="@dimen/indented_margin"
+            android:layout_marginTop="@dimen/padding"
+            android:layout_marginBottom="@dimen/inner_margin_medium"
             android:layout_below="@+id/checkBoxNewPanelInstalled"
             />
 
@@ -134,6 +164,7 @@
             android:id="@+id/textViewInletAssemblyPluggedIn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginLeft="@dimen/inner_margin"
             android:text="@string/inlet_assembly_plugged_in"
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
@@ -217,7 +248,6 @@
             android:layout_marginLeft="@dimen/outer_margin"
             android:layout_marginBottom="@dimen/inner_margin_medium"
             android:background="@color/white"
-            android:layout_centerHorizontal="true"
             android:layout_below="@id/textViewLightStatus"
             android:entries="@array/blinking_solid"
             />

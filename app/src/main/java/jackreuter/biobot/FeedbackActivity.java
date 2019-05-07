@@ -2,6 +2,7 @@ package jackreuter.biobot;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Environment;
 import android.support.v4.content.FileProvider;
@@ -14,6 +15,10 @@ import android.widget.Toast;
 import java.io.File;
 import java.util.ArrayList;
 
+import nl.dionsegijn.konfetti.KonfettiView;
+import nl.dionsegijn.konfetti.models.Shape;
+import nl.dionsegijn.konfetti.models.Size;
+
 public class FeedbackActivity extends Activity {
 
     TextView cityManholeTextView;
@@ -25,6 +30,7 @@ public class FeedbackActivity extends Activity {
     String userID;
     String cityID;
     String manholeID;
+    KonfettiView viewKonfetti;
 
     public final String[] EMAIL_RECIPIENT = {"jreuter@wesleyan.edu"};
     public final String EMAIL_SUBJECT = "BIOBOT";
@@ -42,8 +48,9 @@ public class FeedbackActivity extends Activity {
         userIDTextView = findViewById(R.id.textViewUserID);
         feedbackView = findViewById(R.id.textViewFeedback);
         nextButton = findViewById(R.id.buttonNext);
+        viewKonfetti = findViewById(R.id.viewKonfetti);
 
-        Intent intent = getIntent();
+                Intent intent = getIntent();
         filenames = intent.getStringArrayExtra("filenames");
         feedbackString = intent.getStringExtra("feedback");
         userID = intent.getStringExtra("user_id");
@@ -52,8 +59,18 @@ public class FeedbackActivity extends Activity {
         cityManholeTextView.setText(manholeID + ", " + cityID);
         userIDTextView.setText("Hi " + userID + "!");
 
-
         feedbackView.setText(feedbackString);
+
+        viewKonfetti.build()
+                .addColors(Color.YELLOW, Color.GREEN, Color.MAGENTA)
+                .setDirection(0.0, 359.0)
+                .setSpeed(1f, 5f)
+                .setFadeOutEnabled(true)
+                .setTimeToLive(2000L)
+                .addShapes(Shape.RECT, Shape.CIRCLE)
+                .addSizes(new Size(12, 5))
+                .setPosition(-50f, viewKonfetti.getWidth() + 50f, -50f, -50f)
+                .streamFor(300, 5000L);
     }
 
     /** give option to email files as attachments to EMAIL_RECIPIENT or upload them to cloud storage */

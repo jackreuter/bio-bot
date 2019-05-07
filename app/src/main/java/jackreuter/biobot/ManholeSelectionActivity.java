@@ -2,6 +2,7 @@ package jackreuter.biobot;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.support.annotation.NonNull;
@@ -9,7 +10,9 @@ import android.os.Bundle;
 import android.support.v4.widget.TextViewCompat;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -93,11 +96,29 @@ public class ManholeSelectionActivity extends Activity {
                     manholeRadioGroup.removeAllViews();
 
                     // repopulate
+                    Boolean first = true;
                     for (DocumentSnapshot document : snapshot.getDocuments()) {
                         RadioButton manholeRadioButton = new RadioButton(ManholeSelectionActivity.this);
                         manholeRadioButton.setTextColor(getResources().getColor(R.color.text_color));
                         manholeRadioButton.setText(document.getId());
-                        manholeRadioButton.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.font_size_small));
+                        manholeRadioButton.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.font_size_large));
+
+                        RadioGroup.LayoutParams params = new RadioGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                        if (first) {
+                            params.setMargins(
+                                    (int) getResources().getDimension(R.dimen.inner_margin),
+                                    (int) getResources().getDimension(R.dimen.inner_margin),
+                                    0,
+                                    (int) getResources().getDimension(R.dimen.inner_margin));
+                            first = false;
+                        } else {
+                            params.setMargins(
+                                    (int) getResources().getDimension(R.dimen.inner_margin),
+                                    0,
+                                    0,
+                                    (int) getResources().getDimension(R.dimen.inner_margin));
+                        }
+                        manholeRadioButton.setLayoutParams(params);
                         manholeRadioGroup.addView(manholeRadioButton);
                     }
 
@@ -131,6 +152,7 @@ public class ManholeSelectionActivity extends Activity {
                                 if (mapURL == null) {
                                     mapImageView.setImageResource(0);
                                 } else {
+                                    mapImageView.setAdjustViewBounds(true);
                                     GlideApp.with(ManholeSelectionActivity.this)
                                             .load(mapURL)
                                             .into(mapImageView);
@@ -183,7 +205,7 @@ public class ManholeSelectionActivity extends Activity {
     // start new deployment
     public void onClickInstall(View view) {
         if (manholeID == null) {
-            Toast.makeText(this, "Must select a manhole location", Toast.LENGTH_SHORT).show();
+            largeToast("Must select a manhole location", ManholeSelectionActivity.this);
         } else {
             Intent installActivityIntent = new Intent(ManholeSelectionActivity.this, InstallActivity.class);
             installActivityIntent.putExtra("user_id", userID);
@@ -196,7 +218,7 @@ public class ManholeSelectionActivity extends Activity {
     // start retrieval for past deployment
     public void onClickRetrieve(View view) {
         if (manholeID == null) {
-            Toast.makeText(this, "Must select a manhole location", Toast.LENGTH_SHORT).show();
+            largeToast("Must select a manhole location", ManholeSelectionActivity.this);
         } else if (lastInstallDate.equals("")) {
             AlertDialog alertDialog = new AlertDialog.Builder(ManholeSelectionActivity.this).create();
             alertDialog.setTitle("No install log found");
@@ -251,5 +273,15 @@ public class ManholeSelectionActivity extends Activity {
         logoutIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
         logoutIntent.putExtra("logout", true);
         startActivity(logoutIntent);
+    }
+
+    /** increase size of toast text */
+    public void largeToast(String message, Context context) {
+        Toast toast = Toast.makeText(context, message, Toast.LENGTH_LONG);
+        toast.setGravity(Gravity.CENTER, 0, 0);
+        ViewGroup group = (ViewGroup) toast.getView();
+        TextView messageTextView = (TextView) group.getChildAt(0);
+        messageTextView.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.font_size_large));
+        toast.show();
     }
 }

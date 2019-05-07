@@ -19,7 +19,10 @@ import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.text.InputType;
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.RadioButton;
@@ -116,7 +119,6 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
     // QR intent request
     static final int QR_INTENT_REQUEST_CODE = 0;
 
-
     /** callback used to communicate with arduino, takes arduino data and parses into
      filenames[] and contents[] */
     com.felhr.usbserial.UsbSerialInterface.UsbReadCallback mCallback = new UsbSerialInterface.UsbReadCallback() { //Defining a Callback which triggers whenever data is read.
@@ -183,17 +185,17 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                             serialPort.setParity(UsbSerialInterface.PARITY_NONE);
                             serialPort.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
                             serialPort.read(mCallback); //
-                            Toast.makeText(RetrievalActivity.this, "Serial connection opened", Toast.LENGTH_LONG).show();
+                            largeToast("Serial connection opened", RetrievalActivity.this);
                             serialConnectionOpen = true;
 
                         } else {
-                            Toast.makeText(RetrievalActivity.this, "Port not open", Toast.LENGTH_LONG).show();
+                            largeToast("Port not open", RetrievalActivity.this);
                         }
                     } else {
-                        Toast.makeText(RetrievalActivity.this, "Port is null", Toast.LENGTH_LONG).show();
+                        largeToast("Port is null", RetrievalActivity.this);
                     }
                 } else {
-                    Toast.makeText(RetrievalActivity.this, "Permission not granted", Toast.LENGTH_LONG).show();
+                    largeToast("Permission not granted. Reconnect Teensy", RetrievalActivity.this);
                 }
             } else if (intent.getAction().equals(UsbManager.ACTION_USB_DEVICE_ATTACHED)) {
                 connectArduino();
@@ -354,6 +356,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         feedBackString = "";
         transmissionEnded = false;
         serialConnectionOpen = false;
+
     }
 
     // save QR code image
@@ -412,7 +415,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
     /** send cue to read file from arduino */
     public void onClickRead(View view) {
         if (!serialConnectionOpen) {
-            Toast.makeText(RetrievalActivity.this, "Serial connection not open. Reconnect Teensy", Toast.LENGTH_LONG).show();
+            largeToast("Serial connection not open. Reconnect Teensy", RetrievalActivity.this);
         } else {
             transmissionEnded = false;
             if (checkLocation()) {
@@ -427,9 +430,8 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                     startLocationUpdates();
                 }
 
-                String locationString = "Location not detected";
                 if (location == null) {
-                    Toast.makeText(RetrievalActivity.this, "Location not detected, wait and try again", Toast.LENGTH_LONG).show();
+                    largeToast("Location not detected, wait and try again", RetrievalActivity.this);
                 } else {
                     serialPort.write(INQUIRY.getBytes());
                     while (!transmissionEnded) { }
@@ -557,7 +559,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                     break;
             }
         } else {
-            Toast.makeText(RetrievalActivity.this, "No devices found", Toast.LENGTH_LONG).show();
+            largeToast("No devices found", RetrievalActivity.this);
         }
     }
 
@@ -566,7 +568,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         feedBackString = "";
         if (serialPort != null && serialConnectionOpen) {
             serialPort.close();
-            Toast.makeText(RetrievalActivity.this, "Serial connection closed", Toast.LENGTH_LONG).show();
+            largeToast("Serial connection closed", RetrievalActivity.this);
         }
         serialConnectionOpen = false;
     }
@@ -671,6 +673,16 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
                 locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+    }
+
+    /** increase size of toast text */
+    public void largeToast(String message, Context context) {
+        Toast toast = Toast.makeText(context, message, Toast.LENGTH_LONG);
+        toast.setGravity(Gravity.CENTER, 0, 0);
+        ViewGroup group = (ViewGroup) toast.getView();
+        TextView messageTextView = (TextView) group.getChildAt(0);
+        messageTextView.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.font_size_large));
+        toast.show();
     }
 
 }

@@ -1,13 +1,18 @@
 package jackreuter.biobot;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -48,7 +53,7 @@ public class CitySelectionActivity extends Activity {
         userIDTextView = (TextView) findViewById(R.id.textViewUserID);
         citySpinner = (Spinner) findViewById(R.id.city_spinner);
         final ArrayAdapter citySpinnerAdapter = new ArrayAdapter<String>(this, R.layout.spinner_item, new ArrayList<String>());
-        citySpinnerAdapter.setDropDownViewResource(R.layout.spinner_item);
+        citySpinnerAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
         citySpinner.setAdapter(citySpinnerAdapter);
 
         Intent intent = getIntent();
@@ -90,7 +95,7 @@ public class CitySelectionActivity extends Activity {
         });
     }
 
-    // check database for collection, update spinner with the results
+    /** check database for collection, update spinner with the results */
     public void updateSpinner(CollectionReference collection, final ArrayAdapter spinnerAdapter) {
         spinnerAdapter.clear();
         spinnerAdapter.notifyDataSetChanged();
@@ -110,21 +115,39 @@ public class CitySelectionActivity extends Activity {
                 });
     }
 
+    /** move on to manhole selection screen */
     public void onClickContinue(View view) {
         if (cityID == null) {
-            Toast.makeText(CitySelectionActivity.this, "Must select a city", Toast.LENGTH_SHORT).show();
+            largeToast("Must select a city", CitySelectionActivity.this);
         } else {
+            /**
             Intent manholeSelectionActivityIntent = new Intent(CitySelectionActivity.this, ManholeSelectionActivity.class);
             manholeSelectionActivityIntent.putExtra("user_id", userID);
             manholeSelectionActivityIntent.putExtra("city_id", cityID);
             startActivity(manholeSelectionActivityIntent);
+             */
+
+            // just to test feedback screen
+            Intent feedbackActivityIntent = new Intent(CitySelectionActivity.this, FeedbackActivity.class);
+            startActivity(feedbackActivityIntent);
         }
     }
 
+    /** log out current user and return to login screen */
     public void onClickLogout(View view) {
         Intent logoutIntent = new Intent(CitySelectionActivity.this, LoginActivity.class);
         logoutIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
         logoutIntent.putExtra("logout", true);
         startActivity(logoutIntent);
+    }
+
+    /** increase size of toast text */
+    public void largeToast(String message, Context context) {
+        Toast toast = Toast.makeText(context, message, Toast.LENGTH_LONG);
+        toast.setGravity(Gravity.CENTER, 0, 0);
+        ViewGroup group = (ViewGroup) toast.getView();
+        TextView messageTextView = (TextView) group.getChildAt(0);
+        messageTextView.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.font_size_large));
+        toast.show();
     }
 }

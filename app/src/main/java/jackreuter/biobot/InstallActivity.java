@@ -20,7 +20,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.InputType;
 import android.util.Log;
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
@@ -39,7 +42,10 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
@@ -58,7 +64,7 @@ public class InstallActivity extends Activity  implements GoogleApiClient.Connec
 
     TextView textViewCityManhole;
     TextView userIDTextView;
-    EditText editTextBoxID;
+    Spinner boxIDSpinner;
     CheckBox checkBoxNewBatteryInstalled;
     CheckBox checkBoxNewPanelInstalled;
     CheckBox checkBoxInletAssemblyPluggedIn;
@@ -83,6 +89,7 @@ public class InstallActivity extends Activity  implements GoogleApiClient.Connec
     String userID;
     String cityID;
     String manholeID;
+    String boxID;
     String lightStatusString;
 
     // camera request
@@ -105,7 +112,6 @@ public class InstallActivity extends Activity  implements GoogleApiClient.Connec
         // ui elements
         textViewCityManhole = (TextView) findViewById(R.id.textViewCityManhole);
         userIDTextView = (TextView) findViewById(R.id.textViewUserID);
-        editTextBoxID = (EditText) findViewById(R.id.editTextBoxID);
         checkBoxNewBatteryInstalled = (CheckBox) findViewById(R.id.checkBoxNewBatteryInstalled);
         checkBoxNewPanelInstalled = (CheckBox) findViewById(R.id.checkBoxNewPanelInstalled);
         checkBoxInletAssemblyPluggedIn= (CheckBox) findViewById(R.id.checkBoxInletAssemblyPluggedIn);
@@ -118,8 +124,13 @@ public class InstallActivity extends Activity  implements GoogleApiClient.Connec
         lightStatusOptions.add("Solid");
         lightStatusSpinner = (Spinner) findViewById(R.id.lightStatusSpinner);
         lightStatusSpinnerAdapter = new ArrayAdapter<String>(this, R.layout.spinner_item, lightStatusOptions);
-        lightStatusSpinnerAdapter.setDropDownViewResource(R.layout.spinner_item);
+        lightStatusSpinnerAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
         lightStatusSpinner.setAdapter(lightStatusSpinnerAdapter);
+
+        boxIDSpinner = (Spinner) findViewById(R.id.spinnerBoxID);
+        final ArrayAdapter boxIDSpinnerAdapter = new ArrayAdapter<String>(this, R.layout.spinner_item, new ArrayList<String>());
+        boxIDSpinnerAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+        boxIDSpinner.setAdapter(boxIDSpinnerAdapter);
 
         editTextResetTime.setInputType(InputType.TYPE_NULL);
         editTextLightTurnedGreen.setInputType(InputType.TYPE_NULL);
@@ -131,6 +142,43 @@ public class InstallActivity extends Activity  implements GoogleApiClient.Connec
         manholeID = intent.getStringExtra("manhole_id");
         textViewCityManhole.setText(manholeID + ", " + cityID);
         userIDTextView.setText("Hi " + userID + "!");
+
+        // create spinner for boxID selection
+        // listen for changes in database to repopulate spinner
+        db = FirebaseFirestore.getInstance();
+
+        final CollectionReference boxIDsRef = db.collection("cities")
+                .document(cityID)
+                .collection("boxIDs");
+
+        boxIDsRef.addSnapshotListener(new EventListener<QuerySnapshot>() {
+            @Override
+            public void onEvent(@javax.annotation.Nullable QuerySnapshot snapshot, @javax.annotation.Nullable FirebaseFirestoreException e) {
+                if (e != null) {
+                    Log.w("FIRESTORE", "Listen failed.", e);
+                    return;
+                }
+
+                if (snapshot != null) {
+                    updateSpinner(boxIDsRef, boxIDSpinnerAdapter);
+                } else {
+                    Log.d("FIRESTORE", "Current data: null");
+                }
+            }
+        });
+
+        // listen for boxID selection
+        boxIDSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+                boxID = parentView.getItemAtPosition(position).toString();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parentView) {
+                // your code here
+            }
+        });
 
         // create clock selectors for reset time and light turned green
         editTextResetTime.setOnClickListener(new View.OnClickListener() {
@@ -193,6 +241,26 @@ public class InstallActivity extends Activity  implements GoogleApiClient.Connec
 
     }
 
+    // check database for collection, update spinner with the results
+    public void updateSpinner(CollectionReference collection, final ArrayAdapter spinnerAdapter) {
+        spinnerAdapter.clear();
+        spinnerAdapter.notifyDataSetChanged();
+        collection.get()
+                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                        if (task.isSuccessful()) {
+                            for (QueryDocumentSnapshot document : task.getResult()) {
+                                spinnerAdapter.add(document.getId());
+                                spinnerAdapter.notifyDataSetChanged();
+                            }
+                        } else {
+                            //Log.w("data ayy", "Error getting documents.", task.getException());
+                        }
+                    }
+                });
+    }
+
     @Override
     protected void onStart() {
         super.onStart();
@@ -222,7 +290,7 @@ public class InstallActivity extends Activity  implements GoogleApiClient.Connec
         InstallLog log = new InstallLog(
                 userID,
                 locationString,
-                editTextBoxID.getText().toString(),
+                boxID,
                 checkBoxNewBatteryInstalled.isChecked(),
                 checkBoxNewPanelInstalled.isChecked(),
                 checkBoxInletAssemblyPluggedIn.isChecked(),
@@ -235,8 +303,6 @@ public class InstallActivity extends Activity  implements GoogleApiClient.Connec
         String timeStamp = getDateCurrentTimeZone(System.currentTimeMillis() / 1000);
         Map<String, String> install = new HashMap<>();
         install.put("date", timeStamp);
-
-        db = FirebaseFirestore.getInstance();
 
         // create install
         db.collection("cities")
@@ -271,7 +337,7 @@ public class InstallActivity extends Activity  implements GoogleApiClient.Connec
                 });
 
 
-        Toast.makeText(this, "Install log sent to database", Toast.LENGTH_SHORT).show();
+        largeToast("Install log sent to database", InstallActivity.this);
         finish();
     }
 
@@ -396,5 +462,15 @@ public class InstallActivity extends Activity  implements GoogleApiClient.Connec
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
                 locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+    }
+
+    /** increase size of toast text */
+    public void largeToast(String message, Context context) {
+        Toast toast = Toast.makeText(context, message, Toast.LENGTH_LONG);
+        toast.setGravity(Gravity.CENTER, 0, 0);
+        ViewGroup group = (ViewGroup) toast.getView();
+        TextView messageTextView = (TextView) group.getChildAt(0);
+        messageTextView.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.font_size_large));
+        toast.show();
     }
 }

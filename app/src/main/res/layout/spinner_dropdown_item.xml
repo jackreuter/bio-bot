@@ -8,5 +8,4 @@
     android:gravity="left"
     android:textColor="@color/text_color"
     android:padding="@dimen/padding"
-    android:drawableRight="@drawable/ic_baseline_arrow_drop_down_24px"
     />

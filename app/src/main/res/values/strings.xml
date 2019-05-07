@@ -37,6 +37,7 @@
     <string name="plug_in_device">Plug in device and read data</string>
     <string name="done">Done</string>
     <string name="scan_code">Scan code</string>
+    <string name="todo">Todo:</string>
 
     <string-array name="blinking_solid">
         <item>Blinking</item>

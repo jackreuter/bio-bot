@@ -8,12 +8,16 @@ import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class LoginActivity extends Activity {
@@ -67,7 +71,7 @@ public class LoginActivity extends Activity {
     public void onClickLogin(View view) {
         final String textEntered = userIDEditText.getText().toString();
         if (textEntered.equals("")) {
-            Toast.makeText(LoginActivity.this, "Must enter User ID", Toast.LENGTH_LONG).show();
+            largeToast("Must enter User ID", LoginActivity.this);
         } else {
             editor.putString("user_id", textEntered);
             editor.apply();
@@ -76,5 +80,15 @@ public class LoginActivity extends Activity {
             citySelectionActivityIntent.putExtra("user_id", textEntered);
             startActivity(citySelectionActivityIntent);
         }
+    }
+
+    /** increase size of toast text */
+    public void largeToast(String message, Context context) {
+        Toast toast = Toast.makeText(context, message, Toast.LENGTH_LONG);
+        toast.setGravity(Gravity.CENTER, 0, 0);
+        ViewGroup group = (ViewGroup) toast.getView();
+        TextView messageTextView = (TextView) group.getChildAt(0);
+        messageTextView.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.font_size_large));
+        toast.show();
     }
 }
