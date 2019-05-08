@@ -15,9 +15,19 @@
         android:focusableInTouchMode="true"
         >
 
+        <ImageView
+            android:id="@+id/imageViewLogo"
+            android:layout_width="@dimen/logo_size"
+            android:layout_height="@dimen/logo_size"
+            android:background="@drawable/logo_background"
+            android:src="@drawable/ic_biobot"
+            android:layout_marginTop="@dimen/outer_margin"
+            android:layout_marginLeft="@dimen/outer_margin"
+            />
+
         <TextView
             android:id="@+id/textViewUserID"
-            android:layout_marginLeft="@dimen/outer_margin"
+            android:layout_marginLeft="@dimen/inner_margin"
             android:layout_marginRight="@dimen/inner_margin"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -26,22 +36,22 @@
             android:textStyle="italic"
             android:layout_above="@id/textViewCityManhole"
             android:layout_toLeftOf="@id/buttonLogout"
+            android:layout_toRightOf="@id/imageViewLogo"
             />
 
         <Button
             android:id="@+id/buttonLogout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginRight="@dimen/outer_margin"
             android:layout_marginTop="@dimen/outer_margin"
+            android:layout_marginRight="@dimen/outer_margin"
             android:padding="@dimen/padding"
             android:text="@string/log_out"
             android:textSize="@dimen/font_size_large"
-            android:textColor="@color/white"
+            android:textColor="@color/colorAccent"
             android:onClick="onClickLogout"
             android:layout_alignParentRight="true"
-            android:layout_alignParentTop="true"
-            android:background="@drawable/button"
+            android:background="@android:color/transparent"
             />
 
         <TextView
@@ -269,6 +279,7 @@
             android:id="@+id/editTextNotes"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:hint="@string/install_notes_hint"
             android:layout_marginLeft="@dimen/outer_margin"
             android:layout_marginRight="@dimen/outer_margin"
             android:padding="@dimen/padding"

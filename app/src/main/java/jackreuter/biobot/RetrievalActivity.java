@@ -2,6 +2,7 @@ package jackreuter.biobot;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -23,6 +24,7 @@ import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.RadioButton;
@@ -35,9 +37,11 @@ import android.widget.Button;
 
 import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import android.content.BroadcastReceiver;
@@ -60,6 +64,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 
 public class RetrievalActivity extends Activity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener {
 
@@ -89,7 +94,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
     Button logoutButton, readButton;
     TextView cityManholeTextView, userIDTextView, installLogTextView, notesTextView;
     EditText notesEditText;
-    Button buttonScanQrCode, buttonDone;
+    Button buttonScanQrCode;
     RadioGroup radioGroupGreenLedStatus, radioGroupSamplePlacedOnIce;
     ImageView imageViewScanQrCodeCheck, imageViewReadDataCheck;
     ImageView imageViewGreedLedStatusAlert, imageViewScanQrCodeAlert, imageViewSamplePlacedOnIceAlert, imageViewReadDataAlert;
@@ -105,7 +110,6 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
     // global variables
     String[] filenames;
     String[] contents;
-    String feedBackString;
     String userID;
     String cityID;
     String manholeID;
@@ -142,21 +146,15 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                         filenames = new String[files.length - 1];
                         contents = new String[files.length - 1];
 
-                        String feedback = Integer.toString(files.length - 1) + " files found on box:\n";
-
                         //split files into filenames and contents
                         for (int i = 0; i < files.length - 1; i++) {
                             String[] fileAndContents = files[i].split(START_FILE);
                             filenames[i] = fileAndContents[0].substring(1); //strip off the start and end characters
                             contents[i] = fileAndContents[1].substring(0, fileAndContents[1].length()-2);
-                            feedback += filenames[i] + "\n";
                         }
-                        feedBackString += feedback + "\n";
                     } else {
-                        feedBackString += data + "\n\n";
                     }
                 } else {
-                    //feedBackString += "No data received\n\n";
                 }
                 transmissionEnded = true;
             } catch (UnsupportedEncodingException e) {
@@ -269,7 +267,6 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         notesTextView = (TextView) findViewById(R.id.textViewNotes);
         notesEditText = (EditText) findViewById(R.id.editTextNotes);
         readButton = (Button) findViewById(R.id.buttonRead);
-        buttonDone = (Button) findViewById(R.id.buttonDone);
         buttonScanQrCode = (Button) findViewById(R.id.buttonScanQrCode);
         imageViewScanQrCodeCheck = (ImageView) findViewById(R.id.imageViewScanQrCodeCheck);
         imageViewReadDataCheck = (ImageView) findViewById(R.id.imageViewReadDataCheck);
@@ -329,7 +326,6 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                 imageViewGreedLedStatusAlert.setVisibility(View.INVISIBLE);
                 RadioButton checkedRadioButton = (RadioButton) group.findViewById(checkedId);
                 greenLedStatus = checkedRadioButton.getText().toString();
-                checkIfDone();
             }
         });
 
@@ -341,7 +337,6 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                 imageViewSamplePlacedOnIceAlert.setVisibility(View.INVISIBLE);
                 RadioButton checkedRadioButton = (RadioButton) group.findViewById(checkedId);
                 samplePlacedOnIce = checkedRadioButton.getText().toString();
-                checkIfDone();
             }
         });
 
@@ -353,7 +348,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         }
 
         //INITIALIZE GLOBAL VARIABLES
-        feedBackString = "";
+        transmissionEnded = false;
         transmissionEnded = false;
         serialConnectionOpen = false;
 
@@ -369,7 +364,6 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                 qrCode = text;
                 imageViewScanQrCodeCheck.setVisibility(View.VISIBLE);
                 imageViewScanQrCodeAlert.setVisibility(View.INVISIBLE);
-                checkIfDone();
             }
         }
     }
@@ -406,6 +400,94 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         }
     }
 
+    /** create a dialog to select one of three most recent installs */
+    public void onClickWrongInstallDate(View view) {
+        // custom dialog
+        final Dialog dialog = new Dialog(RetrievalActivity.this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.radiobutton_dialog);
+        List<String> stringList = new ArrayList<>();  // here is list
+        for(int i=0;i<5;i++) {
+            stringList.add("RadioButton " + (i + 1));
+        }
+
+        final RadioGroup rg = (RadioGroup) dialog.findViewById(R.id.radio_group);
+        Button buttonContinue = (Button) dialog.findViewById(R.id.buttonContinue);
+        Button buttonCancel = (Button) dialog.findViewById(R.id.buttonCancel);
+
+        //get past three install dates to create radio buttons
+        db.collection("cities")
+                .document(cityID)
+                .collection("manholes")
+                .document(manholeID)
+                .collection("deployments")
+                .get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                if (task.isSuccessful()) {
+                    QuerySnapshot collection = task.getResult();
+                    List<DocumentSnapshot> deployments = collection.getDocuments();
+                    int totalDeployments = deployments.size();
+                    ArrayList<String> previousInstallDates = new ArrayList<>();
+
+                    if (totalDeployments > 0) { previousInstallDates.add(deployments.get(totalDeployments - 1).getId()); }
+                    if (totalDeployments > 1) { previousInstallDates.add(deployments.get(totalDeployments-2).getId()); }
+                    if (totalDeployments > 2) { previousInstallDates.add(deployments.get(totalDeployments-3).getId()); }
+
+                    for (String previousInstallDate : previousInstallDates) {
+                        RadioButton rb = new RadioButton(RetrievalActivity.this); // dynamically creating RadioButton and adding to RadioGroup.
+                        rb.setText(previousInstallDate);
+                        rb.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.font_size_large));
+
+                        RadioGroup.LayoutParams params = new RadioGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                        params.setMargins(
+                                (int) getResources().getDimension(R.dimen.inner_margin),
+                                0,
+                                0,
+                                (int) getResources().getDimension(R.dimen.inner_margin));
+                        rb.setLayoutParams(params);
+                        rg.addView(rb);
+                    }
+                } else {
+                }
+            }
+        });
+
+        buttonContinue.setOnClickListener(new Button.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // get selected radio button from radioGroup
+                int selectedId = rg.getCheckedRadioButtonId();
+
+                if (selectedId != -1) {
+                    // find the radiobutton by returned id
+                    RadioButton selectedRadioButton = (RadioButton) dialog.findViewById(selectedId);
+                    String selectedInstallDate = selectedRadioButton.getText().toString();
+
+                    // restart activity with new install date
+                    Intent restartActivityIntent = new Intent(RetrievalActivity.this, RetrievalActivity.class);
+                    restartActivityIntent.putExtra("user_id", userID);
+                    restartActivityIntent.putExtra("city_id", cityID);
+                    restartActivityIntent.putExtra("manhole_id", manholeID);
+                    restartActivityIntent.putExtra("install_date", selectedInstallDate);
+                    finish();
+                    startActivity(restartActivityIntent);
+                } else {
+                    largeToast("No date selected", RetrievalActivity.this);
+                }
+            }
+        });
+
+        buttonCancel.setOnClickListener(new Button.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+            }
+        });
+
+        dialog.show();
+    }
+
     /** open camera to scan qr code */
     public void onClickScanQrCode(View view) {
         Intent qrCodeScannerActivityIntent = new Intent(RetrievalActivity.this, QrCodeScannerActivity.class);
@@ -437,25 +519,21 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                     while (!transmissionEnded) { }
                     imageViewReadDataCheck.setVisibility(View.VISIBLE);
                     imageViewReadDataAlert.setVisibility(View.INVISIBLE);
-                    checkIfDone();
                 }
             }
         }
     }
 
-    /** check if all fields complete. if so, activate done button */
-    public void checkIfDone() {
-        if (greenLedStatus != null &&
-            qrCode != null &&
-            samplePlacedOnIce != null &&
-            transmissionEnded) {
-            buttonDone.setEnabled(true);
-        }
-    }
-
     /** upload data to database and return to manhole selection screen */
     public void onClickDone(View view) {
-        saveToDatabase();
+        if (greenLedStatus != null &&
+                qrCode != null &&
+                samplePlacedOnIce != null &&
+                transmissionEnded) {
+            saveToDatabase();
+        } else {
+            largeToast("Please complete all fields", RetrievalActivity.this);
+        }
     }
 
     public void saveToDatabase() {
@@ -483,7 +561,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                 .collection("deployments")
                 .document(installDate)
                 .collection("retrieval log")
-                .document("data")
+                .document(getDateCurrentTimeZone(System.currentTimeMillis() / 1000))
                 .set(log)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
@@ -498,15 +576,10 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                     }
                 });
 
-        feedBackString += "Database successfully updated\n";
-        String tmpfeedBackString = feedBackString;
-        feedBackString = "";
         Intent feedbackActivityIntent = new Intent(RetrievalActivity.this, FeedbackActivity.class);
-        feedbackActivityIntent.putExtra("filenames", filenames); //Optional parameters
-        feedbackActivityIntent.putExtra("feedback", tmpfeedBackString); //Optional parameters
         feedbackActivityIntent.putExtra("user_id", userID);
-        feedbackActivityIntent.putExtra("city_id", cityID);
         feedbackActivityIntent.putExtra("manhole_id", manholeID);
+        feedbackActivityIntent.putExtra("city_id", cityID);
         RetrievalActivity.this.startActivity(feedbackActivityIntent);
 
     }
@@ -565,7 +638,6 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
 
     /** end connection if disconnected */
     public void endSerialConnection() {
-        feedBackString = "";
         if (serialPort != null && serialConnectionOpen) {
             serialPort.close();
             largeToast("Serial connection closed", RetrievalActivity.this);

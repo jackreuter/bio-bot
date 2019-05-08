@@ -2,6 +2,7 @@ package jackreuter.biobot;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -13,6 +14,7 @@ import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -40,8 +42,11 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public class ManholeSelectionActivity extends Activity {
 
@@ -59,6 +64,7 @@ public class ManholeSelectionActivity extends Activity {
     String manholeID;
     String userID;
     String lastInstallDate;
+    boolean hasBeenRetrieved;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -182,13 +188,11 @@ public class ManholeSelectionActivity extends Activity {
 
                         if (snapshot != null) {
                             ArrayList<String> installDates = new ArrayList<String>();
-                            for (DocumentSnapshot document : snapshot.getDocuments()) {
-                                installDates.add(document.getId());
-                            }
-                            if (installDates.size() > 0) {
-                                Collections.sort(installDates);
-                                Collections.reverse(installDates);
-                                lastInstallDate = installDates.get(0);
+                            List<DocumentSnapshot> documents = snapshot.getDocuments();
+                            if (documents.size() > 0) {
+                                DocumentSnapshot lastInstall = documents.get(documents.size() - 1);
+                                lastInstallDate = lastInstall.getId();
+                                checkLastDeploymentForRetrieval();
                             } else {
                                 lastInstallDate = "";
                             }
@@ -197,9 +201,36 @@ public class ManholeSelectionActivity extends Activity {
                         }
                     }
                 });
+
+
             }
         });
 
+    }
+
+    // check last deployment for retrieval log
+    public void checkLastDeploymentForRetrieval() {
+        db.collection("cities")
+                .document(cityID)
+                .collection("manholes")
+                .document(manholeID)
+                .collection("deployments")
+                .document(lastInstallDate)
+                .collection("retrieval log")
+                .get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                if (task.isSuccessful()) {
+                    QuerySnapshot collection = task.getResult();
+                    if (collection.getDocuments().size() > 0) {
+                        hasBeenRetrieved = true;
+                    } else {
+                        hasBeenRetrieved = false;
+                    }
+                } else {
+                }
+            }
+        });
     }
 
     // start new deployment
@@ -207,11 +238,7 @@ public class ManholeSelectionActivity extends Activity {
         if (manholeID == null) {
             largeToast("Must select a manhole location", ManholeSelectionActivity.this);
         } else {
-            Intent installActivityIntent = new Intent(ManholeSelectionActivity.this, InstallActivity.class);
-            installActivityIntent.putExtra("user_id", userID);
-            installActivityIntent.putExtra("city_id", cityID);
-            installActivityIntent.putExtra("manhole_id", manholeID);
-            startActivity(installActivityIntent);
+            startInstall();
         }
     }
 
@@ -220,19 +247,14 @@ public class ManholeSelectionActivity extends Activity {
         if (manholeID == null) {
             largeToast("Must select a manhole location", ManholeSelectionActivity.this);
         } else if (lastInstallDate.equals("")) {
-            AlertDialog alertDialog = new AlertDialog.Builder(ManholeSelectionActivity.this).create();
+            lastInstallDate = getDateCurrentTimeZone(System.currentTimeMillis() / 1000);
+            final AlertDialog alertDialog = new AlertDialog.Builder(ManholeSelectionActivity.this).create();
             alertDialog.setTitle("No install log found");
             alertDialog.setMessage("Are you sure this is the correct manhole location?");
             alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "YES",
                     new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
-                            lastInstallDate = getDateCurrentTimeZone(System.currentTimeMillis() / 1000);
-                            Intent retrievalActivityIntent = new Intent(ManholeSelectionActivity.this, RetrievalActivity.class);
-                            retrievalActivityIntent.putExtra("user_id", userID);
-                            retrievalActivityIntent.putExtra("city_id", cityID);
-                            retrievalActivityIntent.putExtra("manhole_id", manholeID);
-                            retrievalActivityIntent.putExtra("install_date", lastInstallDate);
-                            startActivity(retrievalActivityIntent);
+                            startRetrieval();
                         }
                     });
             alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "NO",
@@ -241,15 +263,28 @@ public class ManholeSelectionActivity extends Activity {
                             dialog.dismiss();
                         }
                     });
-
             alertDialog.show();
+            enlargeTextAlertDialog(alertDialog);
+        } else if (hasBeenRetrieved) {
+            final AlertDialog alertDialog = new AlertDialog.Builder(ManholeSelectionActivity.this).create();
+            alertDialog.setTitle("This manhole already has a retrieval log on file");
+            alertDialog.setMessage("Are you sure you want to start a new retrieval?");
+            alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "YES",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            startRetrieval();
+                        }
+                    });
+            alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "NO",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                        }
+                    });
+            alertDialog.show();
+            enlargeTextAlertDialog(alertDialog);
         } else {
-            Intent retrievalActivityIntent = new Intent(ManholeSelectionActivity.this, RetrievalActivity.class);
-            retrievalActivityIntent.putExtra("user_id", userID);
-            retrievalActivityIntent.putExtra("city_id", cityID);
-            retrievalActivityIntent.putExtra("manhole_id", manholeID);
-            retrievalActivityIntent.putExtra("install_date", lastInstallDate);
-            startActivity(retrievalActivityIntent);
+            startRetrieval();
         }
     }
 
@@ -284,4 +319,33 @@ public class ManholeSelectionActivity extends Activity {
         messageTextView.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.font_size_large));
         toast.show();
     }
+
+    /** start install activity */
+    public void startInstall() {
+        Intent installActivityIntent = new Intent(ManholeSelectionActivity.this, InstallActivity.class);
+        installActivityIntent.putExtra("user_id", userID);
+        installActivityIntent.putExtra("city_id", cityID);
+        installActivityIntent.putExtra("manhole_id", manholeID);
+        startActivity(installActivityIntent);
+    }
+
+    /** start retrieval activity */
+    public void startRetrieval() {
+        Intent retrievalActivityIntent = new Intent(ManholeSelectionActivity.this, RetrievalActivity.class);
+        retrievalActivityIntent.putExtra("user_id", userID);
+        retrievalActivityIntent.putExtra("city_id", cityID);
+        retrievalActivityIntent.putExtra("manhole_id", manholeID);
+        retrievalActivityIntent.putExtra("install_date", lastInstallDate);
+        startActivity(retrievalActivityIntent);
+    }
+
+    public void enlargeTextAlertDialog(AlertDialog ad) {
+        TextView textViewMessage = (TextView) ad.findViewById(android.R.id.message);
+        Button buttonYes = ad.getButton(Dialog.BUTTON_POSITIVE);
+        Button buttonNo = ad.getButton(Dialog.BUTTON_NEGATIVE);
+        textViewMessage.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.font_size_large));
+        buttonYes.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.font_size_large));
+        buttonNo.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.font_size_large));
+    }
+
 }

@@ -38,6 +38,12 @@
     <string name="done">Done</string>
     <string name="scan_code">Scan code</string>
     <string name="todo">Todo:</string>
+    <string name="successfully_submitted">successfully submitted.</string>
+    <string name="wrong_install_date">wrong install date?</string>
+    <string name="select_install_date">Select install date:</string>
+    <string name="cancel_button">Cancel</string>
+    <string name="retrieval_notes_hint">Noises? Weather conditions? Twisted wires?</string>
+    <string name="install_notes_hint">Noises? Weather conditions? Twisted wires?</string>
 
     <string-array name="blinking_solid">
         <item>Blinking</item>

@@ -120,16 +120,10 @@ public class CitySelectionActivity extends Activity {
         if (cityID == null) {
             largeToast("Must select a city", CitySelectionActivity.this);
         } else {
-            /**
             Intent manholeSelectionActivityIntent = new Intent(CitySelectionActivity.this, ManholeSelectionActivity.class);
             manholeSelectionActivityIntent.putExtra("user_id", userID);
             manholeSelectionActivityIntent.putExtra("city_id", cityID);
             startActivity(manholeSelectionActivityIntent);
-             */
-
-            // just to test feedback screen
-            Intent feedbackActivityIntent = new Intent(CitySelectionActivity.this, FeedbackActivity.class);
-            startActivity(feedbackActivityIntent);
         }
     }
 

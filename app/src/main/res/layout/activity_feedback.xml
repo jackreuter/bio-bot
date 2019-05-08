@@ -7,13 +7,10 @@
     tools:context=".FeedbackActivity">
 
     <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/background"
-        android:focusable="true"
-        android:focusableInTouchMode="true"
+        android:background="@drawable/logo_background"
         >
 
         <nl.dionsegijn.konfetti.KonfettiView
@@ -21,94 +18,62 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <TextView
-            android:id="@+id/textViewUserID"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="@dimen/outer_margin"
-            android:layout_marginRight="@dimen/inner_margin"
-            android:textSize="@dimen/font_size_large"
-            android:textColor="@color/text_color"
-            android:textStyle="italic"
-            android:layout_above="@+id/textViewCityManhole"
-            android:layout_toLeftOf="@id/buttonLogout"
-            />
-
-        <Button
-            android:id="@+id/buttonLogout"
+        <RelativeLayout
+            android:id="@+id/relativeLayoutSuccess"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/outer_margin"
-            android:layout_marginRight="@dimen/outer_margin"
-            android:padding="@dimen/padding"
-            android:text="@string/log_out"
-            android:textSize="@dimen/font_size_large"
-            android:textColor="@color/white"
-            android:onClick="onClickLogout"
-            android:layout_alignParentRight="true"
-            android:background="@drawable/button"
-            />
-
-        <TextView
-            android:id="@+id/textViewCityManhole"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/outer_margin"
-            android:layout_marginRight="@dimen/outer_margin"
-            android:layout_alignParentRight="true"
-            android:textSize="@dimen/font_size_large"
-            android:textColor="@color/text_color"
-            android:textStyle="italic"
-            android:layout_below="@+id/buttonLogout"
-            />
-
-        <TextView
-            android:id="@+id/textViewRetrievalLogHeader"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_marginLeft="@dimen/outer_margin"
-            android:textSize="@dimen/font_size_large"
-            android:textColor="@color/text_color"
-            android:text="@string/retrieval_log_header"
-            android:textStyle="bold"
-            android:layout_below="@+id/textViewCityManhole"
-            />
-
-        <ScrollView
-            android:id="@+id/scrollViewFeedback"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="@dimen/outer_margin"
-            android:layout_marginRight="@dimen/outer_margin"
-            android:layout_marginBottom="@dimen/inner_margin"
-            android:layout_below="@id/textViewRetrievalLogHeader"
-            android:background="@color/shadow"
+            android:layout_centerVertical="true"
+            android:layout_centerHorizontal="true"
+            android:background="@drawable/success_text_background"
+            android:orientation="vertical"
+            android:padding="@dimen/inner_margin_medium"
             >
+
             <TextView
-                android:id="@+id/textViewFeedback"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:id="@+id/textViewYouRock"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/font_size_large"
                 android:textColor="@color/text_color"
-                android:textSize="@dimen/font_size_small"
-                android:padding="@dimen/padding"
+                android:layout_centerHorizontal="true"
                 />
 
-        </ScrollView>
+            <TextView
+                android:id="@+id/textViewManhole"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/font_size_large"
+                android:textColor="@color/text_color"
+                android:layout_centerHorizontal="true"
+                android:layout_below="@+id/textViewYouRock"
+                />
+
+            <TextView
+                android:id="@+id/textViewSuccess"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/successfully_submitted"
+                android:textSize="@dimen/font_size_large"
+                android:textColor="@color/text_color"
+                android:layout_centerHorizontal="true"
+                android:layout_below="@id/textViewManhole"
+                />
+
+        </RelativeLayout>
 
         <Button
             android:id="@+id/buttonNext"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/inner_margin"
+            android:layout_marginTop="@dimen/inner_margin_medium"
             android:padding="@dimen/padding"
-            android:layout_centerHorizontal="true"
-            android:background="@drawable/button"
+            android:background="@android:color/transparent"
             android:onClick="onClickNext"
             android:text="@string/next"
             android:textSize="@dimen/font_size_large"
-            android:textColor="@color/white"
-            android:layout_below="@+id/scrollViewFeedback"
+            android:textColor="@color/colorAccent"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/relativeLayoutSuccess"
             />
 
     </RelativeLayout>

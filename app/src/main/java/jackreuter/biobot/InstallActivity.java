@@ -26,6 +26,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -280,65 +281,81 @@ public class InstallActivity extends Activity  implements GoogleApiClient.Connec
     }
 
     public void onClickLogInfo(View view) {
-        String locationString;
-        if (location == null) {
-            locationString = "unable to find location";
+        Log.d("ayyy", ""+checkBoxNewBatteryInstalled.isChecked() + " " +
+                        checkBoxNewPanelInstalled.isChecked() + " " +
+                        checkBoxInletAssemblyPluggedIn.isChecked() + " " +
+                        (editTextResetTime.getText() != null) + " " +
+                        (editTextLightTurnedGreen.getText() != null) + " " +
+                        (lightStatusString != null));
+        if (boxID != null &&
+                checkBoxNewBatteryInstalled.isChecked() &&
+                checkBoxNewPanelInstalled.isChecked() &&
+                checkBoxInletAssemblyPluggedIn.isChecked() &&
+                (editTextResetTime.getText() != null) &&
+                (editTextLightTurnedGreen.getText() != null) &&
+                (lightStatusString != null)
+        ) {
+            String locationString;
+            if (location == null) {
+                locationString = "unable to find location";
+            } else {
+                locationString = location.getLatitude() + " " + location.getLongitude();
+            }
+
+            InstallLog log = new InstallLog(
+                    userID,
+                    locationString,
+                    boxID,
+                    checkBoxNewBatteryInstalled.isChecked(),
+                    checkBoxNewPanelInstalled.isChecked(),
+                    checkBoxInletAssemblyPluggedIn.isChecked(),
+                    editTextResetTime.getText().toString(),
+                    editTextLightTurnedGreen.getText().toString(),
+                    lightStatusString,
+                    editTextNotes.getText().toString()
+            );
+
+            String timeStamp = getDateCurrentTimeZone(System.currentTimeMillis() / 1000);
+            Map<String, String> install = new HashMap<>();
+
+            // create install
+            db.collection("cities")
+                    .document(cityID)
+                    .collection("manholes")
+                    .document(manholeID)
+                    .collection("deployments")
+                    .document(timeStamp)
+                    .set(install);
+
+            // log install information
+            db.collection("cities")
+                    .document(cityID)
+                    .collection("manholes")
+                    .document(manholeID)
+                    .collection("deployments")
+                    .document(timeStamp)
+                    .collection("install log")
+                    .document("data")
+                    .set(log)
+                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            Log.d("FIRESTORE", "DocumentSnapshot successfully written!");
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Log.w("FIRESTORE", "Error writing document", e);
+                        }
+                    });
+
+
+            largeToast("Install log sent to database", InstallActivity.this);
+            finish();
         } else {
-            locationString = location.getLatitude() + " " + location.getLongitude();
+            largeToast("Please complete all fields", InstallActivity.this);
         }
-
-        InstallLog log = new InstallLog(
-                userID,
-                locationString,
-                boxID,
-                checkBoxNewBatteryInstalled.isChecked(),
-                checkBoxNewPanelInstalled.isChecked(),
-                checkBoxInletAssemblyPluggedIn.isChecked(),
-                editTextResetTime.getText().toString(),
-                editTextLightTurnedGreen.getText().toString(),
-                lightStatusString,
-                editTextNotes.getText().toString()
-        );
-
-        String timeStamp = getDateCurrentTimeZone(System.currentTimeMillis() / 1000);
-        Map<String, String> install = new HashMap<>();
-        install.put("date", timeStamp);
-
-        // create install
-        db.collection("cities")
-                .document(cityID)
-                .collection("manholes")
-                .document(manholeID)
-                .collection("deployments")
-                .document(timeStamp)
-                .set(install);
-
-        // log install information
-        db.collection("cities")
-                .document(cityID)
-                .collection("manholes")
-                .document(manholeID)
-                .collection("deployments")
-                .document(timeStamp)
-                .collection("install log")
-                .document("data")
-                .set(log)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        Log.d("FIRESTORE", "DocumentSnapshot successfully written!");
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.w("FIRESTORE", "Error writing document", e);
-                    }
-                });
-
-
-        largeToast("Install log sent to database", InstallActivity.this);
-        finish();
     }
 
     /** get timestamp and format*/

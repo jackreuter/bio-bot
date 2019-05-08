@@ -15,9 +15,19 @@
         android:focusableInTouchMode="true"
         >
 
+        <ImageView
+            android:id="@+id/imageViewLogo"
+            android:layout_width="@dimen/logo_size"
+            android:layout_height="@dimen/logo_size"
+            android:background="@drawable/logo_background"
+            android:src="@drawable/ic_biobot"
+            android:layout_marginTop="@dimen/outer_margin"
+            android:layout_marginLeft="@dimen/outer_margin"
+            />
+
         <TextView
             android:id="@+id/textViewUserID"
-            android:layout_marginLeft="@dimen/outer_margin"
+            android:layout_marginLeft="@dimen/inner_margin"
             android:layout_marginRight="@dimen/inner_margin"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -26,22 +36,22 @@
             android:textStyle="italic"
             android:layout_above="@+id/textViewCityManhole"
             android:layout_toLeftOf="@id/buttonLogout"
+            android:layout_toRightOf="@id/imageViewLogo"
             />
 
         <Button
             android:id="@+id/buttonLogout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginRight="@dimen/outer_margin"
             android:layout_marginTop="@dimen/outer_margin"
+            android:layout_marginRight="@dimen/outer_margin"
             android:padding="@dimen/padding"
             android:text="@string/log_out"
             android:textSize="@dimen/font_size_large"
-            android:textColor="@color/white"
+            android:textColor="@color/colorAccent"
             android:onClick="onClickLogout"
             android:layout_alignParentRight="true"
-            android:layout_alignParentTop="true"
-            android:background="@drawable/button"
+            android:background="@android:color/transparent"
             />
 
         <TextView
@@ -89,6 +99,20 @@
                 />
         </ScrollView>
 
+        <Button
+            android:id="@+id/buttonWrongInstallDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:text="@string/wrong_install_date"
+            android:textColor="@color/colorPrimary"
+            android:textSize="@dimen/font_size_small"
+            android:onClick="onClickWrongInstallDate"
+            android:layout_above="@id/relativeLayoutDiagnosis"
+            android:layout_marginRight="@dimen/outer_margin"
+            android:layout_alignParentRight="true"
+            />
+
         <TextView
             android:id="@+id/textViewDiagnosisHeader"
             android:layout_width="wrap_content"
@@ -109,7 +133,7 @@
             android:layout_height="wrap_content"
             android:layout_below="@+id/textViewDiagnosisHeader"
             android:layout_margin="@dimen/inner_margin"
-            android:src="@drawable/ic_bullet_24px"
+            android:src="@drawable/ic_asterisk"
             />
 
         <RelativeLayout
@@ -143,17 +167,22 @@
 
                 <RadioButton
                     android:id="@+id/radioButtonGreenLedOn"
-                    android:layout_width="wrap_content"
+                    android:layout_width="@dimen/radio_button_scaled_width"
                     android:layout_height="wrap_content"
+                    android:layout_marginLeft="@dimen/inner_margin_medium"
+                    android:scaleX="@dimen/radio_button_scale_factor"
+                    android:scaleY="@dimen/radio_button_scale_factor"
                     android:textSize="@dimen/font_size_detail"
-
                     android:text="On"
                     />
 
                 <RadioButton
                     android:id="@+id/radioButtonGreenLedOff"
-                    android:layout_width="wrap_content"
+                    android:layout_width="@dimen/radio_button_scaled_width"
                     android:layout_height="wrap_content"
+                    android:layout_marginLeft="@dimen/inner_margin_medium"
+                    android:scaleX="@dimen/radio_button_scale_factor"
+                    android:scaleY="@dimen/radio_button_scale_factor"
                     android:textSize="@dimen/font_size_detail"
                     android:text="Off"
                     />
@@ -183,7 +212,7 @@
             android:layout_below="@+id/textViewTasksHeader"
             android:layout_marginLeft="@dimen/inner_margin"
             android:layout_marginTop="48dp"
-            android:src="@drawable/ic_bullet_24px"
+            android:src="@drawable/ic_asterisk"
             />
 
         <ImageView
@@ -193,7 +222,7 @@
             android:layout_below="@+id/imageViewScanQrCodeAlert"
             android:layout_marginLeft="@dimen/inner_margin"
             android:layout_marginTop="64dp"
-            android:src="@drawable/ic_bullet_24px"
+            android:src="@drawable/ic_asterisk"
             />
 
         <ImageView
@@ -203,7 +232,7 @@
             android:layout_below="@+id/imageViewSamplePlacedOnIceAlert"
             android:layout_marginLeft="@dimen/inner_margin"
             android:layout_marginTop="48dp"
-            android:src="@drawable/ic_bullet_24px"
+            android:src="@drawable/ic_asterisk"
             />
 
         <RelativeLayout
@@ -284,16 +313,22 @@
 
                 <RadioButton
                     android:id="@+id/radioButtonSamplePlacedOnIceYes"
-                    android:layout_width="wrap_content"
+                    android:layout_width="@dimen/radio_button_scaled_width"
                     android:layout_height="wrap_content"
+                    android:layout_marginLeft="@dimen/inner_margin_medium"
+                    android:scaleX="@dimen/radio_button_scale_factor"
+                    android:scaleY="@dimen/radio_button_scale_factor"
                     android:textSize="@dimen/font_size_detail"
                     android:text="Yes"
                     />
 
                 <RadioButton
                     android:id="@+id/radioButtonSamplePlacedOnIceNo"
-                    android:layout_width="wrap_content"
+                    android:layout_width="@dimen/radio_button_scaled_width"
                     android:layout_height="wrap_content"
+                    android:layout_marginLeft="@dimen/inner_margin_medium"
+                    android:scaleX="@dimen/radio_button_scale_factor"
+                    android:scaleY="@dimen/radio_button_scale_factor"
                     android:textSize="@dimen/font_size_detail"
                     android:text="No"
                     />
@@ -359,6 +394,7 @@
             android:layout_marginBottom="@dimen/inner_margin"
             android:padding="@dimen/padding"
             android:textSize="@dimen/font_size_large"
+            android:hint="@string/retrieval_notes_hint"
             android:textColor="@color/text_color"
             android:background="@color/white"
             android:layout_below="@id/textViewNotes"
@@ -368,7 +404,6 @@
             android:id="@+id/buttonDone"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:enabled="false"
             android:onClick="onClickDone"
             android:padding="@dimen/padding"
             android:text="@string/done"

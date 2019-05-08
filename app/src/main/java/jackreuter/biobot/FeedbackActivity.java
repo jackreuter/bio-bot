@@ -3,10 +3,14 @@ package jackreuter.biobot;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Point;
 import android.net.Uri;
 import android.os.Environment;
 import android.support.v4.content.FileProvider;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.Display;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -21,19 +25,16 @@ import nl.dionsegijn.konfetti.models.Size;
 
 public class FeedbackActivity extends Activity {
 
-    TextView cityManholeTextView;
-    TextView userIDTextView;
-    TextView feedbackView;
+    TextView textViewYouRock;
+    TextView textViewManhole;
+    TextView textViewSuccess;
+    KonfettiView konfettiView;
     Button nextButton;
-    String[] filenames;
-    String feedbackString;
     String userID;
     String cityID;
     String manholeID;
-    KonfettiView viewKonfetti;
-
-    public final String[] EMAIL_RECIPIENT = {"jreuter@wesleyan.edu"};
-    public final String EMAIL_SUBJECT = "BIOBOT";
+    float xVal;
+    float yVal;
 
     //must equal name field in provider_paths.xml
     public final String FOLDER_NAME = "data";
@@ -44,69 +45,66 @@ public class FeedbackActivity extends Activity {
 
         setContentView(R.layout.activity_feedback);
 
-        cityManholeTextView = findViewById(R.id.textViewCityManhole);
-        userIDTextView = findViewById(R.id.textViewUserID);
-        feedbackView = findViewById(R.id.textViewFeedback);
+        textViewYouRock = findViewById(R.id.textViewYouRock);
+        textViewManhole = findViewById(R.id.textViewManhole);
+        textViewSuccess = findViewById(R.id.textViewSuccess);
         nextButton = findViewById(R.id.buttonNext);
-        viewKonfetti = findViewById(R.id.viewKonfetti);
 
-                Intent intent = getIntent();
-        filenames = intent.getStringArrayExtra("filenames");
-        feedbackString = intent.getStringExtra("feedback");
+        Intent intent = getIntent();
         userID = intent.getStringExtra("user_id");
         cityID = intent.getStringExtra("city_id");
         manholeID = intent.getStringExtra("manhole_id");
-        cityManholeTextView.setText(manholeID + ", " + cityID);
-        userIDTextView.setText("Hi " + userID + "!");
+        textViewYouRock.setText("You rock, " + userID + "!");
+        textViewManhole.setText("Manhole at " + manholeID);
 
-        feedbackView.setText(feedbackString);
+        konfettiView = findViewById(R.id.viewKonfetti);
 
-        viewKonfetti.build()
+        Display display = getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+        int width = size.x;
+
+        konfettiView.build()
                 .addColors(Color.YELLOW, Color.GREEN, Color.MAGENTA)
                 .setDirection(0.0, 359.0)
                 .setSpeed(1f, 5f)
                 .setFadeOutEnabled(true)
                 .setTimeToLive(2000L)
                 .addShapes(Shape.RECT, Shape.CIRCLE)
-                .addSizes(new Size(12, 5))
-                .setPosition(-50f, viewKonfetti.getWidth() + 50f, -50f, -50f)
+                .addSizes(new Size(12, 5f))
+                .setPosition(-50f, width + 50f, -50f, -50f)
                 .streamFor(300, 5000L);
-    }
 
-    /** give option to email files as attachments to EMAIL_RECIPIENT or upload them to cloud storage */
-    public void onClickEmail(View view) {
-        //need to "send multiple" to get more than one attachment
-        Intent emailIntent = new Intent(Intent.ACTION_SEND_MULTIPLE);
-        emailIntent.setType("text/plain");
-        emailIntent.putExtra(android.content.Intent.EXTRA_EMAIL, EMAIL_RECIPIENT);
-        emailIntent.putExtra(Intent.EXTRA_SUBJECT, EMAIL_SUBJECT);
-        emailIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        konfettiView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN ||
+                    event.getAction() == MotionEvent.ACTION_MOVE){
+                    xVal = event.getX();
+                    yVal = event.getY();
+                }
 
-        //has to be an ArrayList
-        ArrayList<Uri> uris = new ArrayList<Uri>();
-
-        //convert from paths to Android friendly Parcelable Uri's
-        for (String filename : filenames)
-        {
-            File fileIn = new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/"+FOLDER_NAME, filename);
-            Uri u = FileProvider.getUriForFile(FeedbackActivity.this, FeedbackActivity.this.getApplicationContext().getPackageName() + ".provider", fileIn);
-            uris.add(u);
-        }
-
-        emailIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
-
-        try {
-            startActivity(Intent.createChooser(emailIntent, "Send mail..."));
-        } catch (android.content.ActivityNotFoundException ex) {
-            Toast.makeText(FeedbackActivity.this, "There is no email client installed.", Toast.LENGTH_LONG).show();
-        }
+                konfettiView.build()
+                        .addColors(Color.YELLOW, Color.MAGENTA, Color.GREEN)
+                        .setDirection(0.0, 359.0)
+                        .setSpeed(1f, 5f)
+                        .setFadeOutEnabled(true)
+                        .setTimeToLive(400L)
+                        .addShapes(Shape.RECT, Shape.CIRCLE)
+                        .addSizes(new Size(12, 5f))
+                        .setPosition(xVal - 10f, xVal + 10f, yVal + 10f, yVal - 10f)
+                        .streamFor(100, 200L);
+                return true;
+            }
+        });
     }
 
     /** return to the main activity to communicate with arduino */
     public void onClickNext(View view) {
-        Intent nextIntent = new Intent(FeedbackActivity.this, CitySelectionActivity.class);
+        Intent nextIntent = new Intent(FeedbackActivity.this, ManholeSelectionActivity.class);
         nextIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
         nextIntent.putExtra("user_id", userID);
+        nextIntent.putExtra("city_id", cityID);
         startActivity(nextIntent);
     }
 
@@ -116,10 +114,4 @@ public class FeedbackActivity extends Activity {
         nextButton.performClick();
     }
 
-    public void onClickLogout(View view) {
-        Intent logoutIntent = new Intent(FeedbackActivity.this, LoginActivity.class);
-        logoutIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-        logoutIntent.putExtra("logout", true);
-        startActivity(logoutIntent);
-    }
 }
