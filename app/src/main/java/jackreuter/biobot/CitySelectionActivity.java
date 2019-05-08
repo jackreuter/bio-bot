@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -12,22 +13,33 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.RadioButton;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
 
-public class CitySelectionActivity extends Activity {
+public class CitySelectionActivity extends FragmentActivity implements OnMapReadyCallback {
 
     // Cloud Firestore database
     FirebaseFirestore db;
@@ -40,6 +52,9 @@ public class CitySelectionActivity extends Activity {
     String cityID;
     String userID;
     String installDate;
+
+    // City map
+    private GoogleMap mMap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,6 +98,47 @@ public class CitySelectionActivity extends Activity {
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
                 cityID = parentView.getItemAtPosition(position).toString();
+
+                db.collection("cities")
+                        .document(cityID)
+                        .get()
+                        .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                            @Override
+                            public void onSuccess(DocumentSnapshot documentSnapshot) {
+                                GeoPoint location = (GeoPoint) documentSnapshot.get("location");
+                                double latitude = location.getLatitude();
+                                double longitude = location.getLongitude();
+                                LatLng cityCenter = new LatLng(latitude, longitude);
+                                mMap.moveCamera(CameraUpdateFactory.newLatLng(cityCenter));
+                            }
+                        });
+
+                final CollectionReference manholesRef = db.collection("cities")
+                        .document(cityID)
+                        .collection("manholes");
+                manholesRef.addSnapshotListener(new EventListener<QuerySnapshot>() {
+                    @Override
+                    public void onEvent(@javax.annotation.Nullable QuerySnapshot snapshot, @javax.annotation.Nullable FirebaseFirestoreException e) {
+                        if (e != null) {
+                            Log.w("FIRESTORE", "Listen failed.", e);
+                            return;
+                        }
+
+                        if (snapshot != null) {
+                            for (DocumentSnapshot document : snapshot.getDocuments()) {
+                                GeoPoint location = (GeoPoint) document.get("location");
+                                if (location != null) {
+                                    double latitude = location.getLatitude();
+                                    double longitude = location.getLongitude();
+                                    String name = document.getId();
+                                    LatLng city = new LatLng(latitude, longitude);
+                                    mMap.addMarker(new MarkerOptions().position(city)
+                                            .title(name));
+                                }
+                            }
+                        }
+                    }
+                });
             }
 
             @Override
@@ -90,6 +146,12 @@ public class CitySelectionActivity extends Activity {
                 // your code here
             }
         });
+
+        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
+
     }
 
     /** check database for collection, update spinner with the results */
@@ -110,6 +172,22 @@ public class CitySelectionActivity extends Activity {
                         }
                     }
                 });
+    }
+
+    /**
+     * Manipulates the map once available.
+     * This callback is triggered when the map is ready to be used.
+     * This is where we can add markers or lines, add listeners or move the camera. In this case,
+     * we just add a marker near Sydney, Australia.
+     * If Google Play services is not installed on the device, the user will be prompted to install
+     * it inside the SupportMapFragment. This method will only be triggered once the user has
+     * installed Google Play services and returned to the app.
+     */
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        mMap = googleMap;
+        mMap.setMinZoomPreference(12.0f);
+        mMap.setMaxZoomPreference(20.0f);
     }
 
     /** move on to manhole selection screen */

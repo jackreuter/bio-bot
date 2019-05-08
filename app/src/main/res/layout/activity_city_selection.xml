@@ -82,11 +82,29 @@
             android:layout_below="@+id/selectCityTextView"
             />
 
+        <FrameLayout
+            android:id="@+id/frameLayoutMap"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:layout_marginRight="@dimen/outer_margin"
+            android:layout_below="@+id/city_spinner"
+            android:layout_above="@+id/buttonContinue"
+            >
+            <fragment
+                android:id="@+id/map"
+                android:name="com.google.android.gms.maps.SupportMapFragment"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                tools:context=".CityMapSelectionActivity" />
+        </FrameLayout>
+
         <Button
             android:id="@+id/buttonContinue"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/inner_margin"
+            android:layout_marginBottom="@dimen/outer_margin"
             android:padding="@dimen/padding"
             android:layout_centerHorizontal="true"
             android:onClick="onClickContinue"
@@ -94,7 +112,7 @@
             android:textSize="@dimen/font_size_large"
             android:text="@string/continue_button"
             android:textColor="@color/white"
-            android:layout_below="@+id/city_spinner"
+            android:layout_alignParentBottom="true"
             />
 
     </RelativeLayout>

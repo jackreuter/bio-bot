@@ -49,4 +49,5 @@
         <item>Blinking</item>
         <item>Solid</item>
     </string-array>
+    <string name="title_activity_city_map_selection">Map</string>
 </resources>
