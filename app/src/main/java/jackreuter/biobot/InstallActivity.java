@@ -281,18 +281,12 @@ public class InstallActivity extends Activity  implements GoogleApiClient.Connec
     }
 
     public void onClickLogInfo(View view) {
-        Log.d("ayyy", ""+checkBoxNewBatteryInstalled.isChecked() + " " +
-                        checkBoxNewPanelInstalled.isChecked() + " " +
-                        checkBoxInletAssemblyPluggedIn.isChecked() + " " +
-                        (editTextResetTime.getText() != null) + " " +
-                        (editTextLightTurnedGreen.getText() != null) + " " +
-                        (lightStatusString != null));
         if (boxID != null &&
                 checkBoxNewBatteryInstalled.isChecked() &&
                 checkBoxNewPanelInstalled.isChecked() &&
                 checkBoxInletAssemblyPluggedIn.isChecked() &&
-                (editTextResetTime.getText() != null) &&
-                (editTextLightTurnedGreen.getText() != null) &&
+                (editTextResetTime.getText().length() > 0) &&
+                (editTextLightTurnedGreen.getText().length() > 0) &&
                 (lightStatusString != null)
         ) {
             String locationString;

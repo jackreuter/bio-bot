@@ -86,7 +86,6 @@
             android:layout_height="wrap_content"
             android:layout_marginRight="@dimen/outer_margin"
             android:layout_marginLeft="@dimen/outer_margin"
-            android:layout_marginBottom="@dimen/inner_margin_medium"
             android:background="@color/white"
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
