@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:keepScreenOn="true"
     tools:context=".RetrievalActivity">
 
-    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/background"
@@ -358,6 +357,17 @@
                 android:textSize="@dimen/font_size_small"
                 android:background="@color/black"
                 android:layout_below="@+id/textViewPlugInDevice"
+                />
+
+            <TextView
+                android:id="@+id/textViewFeedback"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="@dimen/padding"
+                android:textSize="@dimen/font_size_small"
+                android:textColor="@color/text_color"
+                android:layout_toRightOf="@+id/buttonRead"
+                android:layout_below="@id/textViewPlugInDevice"
                 />
 
             <ImageView

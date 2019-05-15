@@ -50,4 +50,7 @@
         <item>Solid</item>
     </string-array>
     <string name="title_activity_city_map_selection">Map</string>
+    <string name="enter_admin_password">Enter admin password</string>
+    <string name="admin_panel">Admin panel</string>
+    <string name="feedback_title">Feedback:</string>
 </resources>

@@ -303,6 +303,7 @@ public class ManholeSelectionActivity extends Activity {
         return "";
     }
 
+    /** logout user and return to login screen */
     public void onClickLogout(View view) {
         Intent logoutIntent = new Intent(ManholeSelectionActivity.this, LoginActivity.class);
         logoutIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);

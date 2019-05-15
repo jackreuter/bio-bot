@@ -3,7 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ManholeSelectionActivity">
+    android:keepScreenOn="true"
+    tools:context=".AdminActivity">
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -24,7 +25,7 @@
             />
 
         <TextView
-            android:id="@+id/textViewUserID"
+            android:id="@+id/textViewAdminPanel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginLeft="@dimen/inner_margin"
@@ -32,7 +33,8 @@
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
             android:textStyle="italic"
-            android:layout_above="@+id/selectManholeTextView"
+            android:text="@string/admin_panel"
+            android:layout_above="@+id/feedbackTitleTextView"
             android:layout_toLeftOf="@id/buttonLogout"
             android:layout_toRightOf="@id/imageViewLogo"
             />
@@ -53,77 +55,68 @@
             />
 
         <TextView
-            android:id="@+id/selectManholeTextView"
+            android:id="@+id/feedbackTitleTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/select_manhole"
+            android:text="@string/feedback_title"
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
             android:textStyle="bold"
             android:layout_marginTop="@dimen/outer_margin"
-            android:layout_marginBottom="@dimen/inner_margin"
-            android:layout_centerHorizontal="true"
+            android:layout_marginLeft="@dimen/outer_margin"
             android:layout_below="@+id/buttonLogout"
             />
 
         <ScrollView
-            android:id="@+id/scrollViewManholes"
+            android:id="@+id/scrollViewFeedback"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
+            android:background="@color/shadow"
+            android:layout_marginBottom="@dimen/inner_margin"
             android:layout_marginLeft="@dimen/outer_margin"
             android:layout_marginRight="@dimen/outer_margin"
-            android:layout_below="@+id/selectManholeTextView"
-            android:layout_above="@+id/imageViewMap"
-            android:layout_marginTop="@dimen/inner_margin"
-            android:layout_marginBottom="@dimen/inner_margin"
+            android:padding="@dimen/padding"
+            android:layout_below="@id/feedbackTitleTextView"
+            android:layout_above="@+id/buttonRead"
             >
-            <RadioGroup
-                android:id="@+id/radioGroupManholes"
+            <TextView
+                android:id="@+id/textViewFeedback"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@color/white"
-                android:orientation="vertical"
-            />
+                android:layout_height="match_parent"
+                android:textColor="@color/text_color"
+                android:textSize="@dimen/font_size_small"
+                />
         </ScrollView>
 
-        <ImageView
-            android:id="@+id/imageViewMap"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="@dimen/outer_margin"
-            android:layout_marginRight="@dimen/outer_margin"
-            android:layout_above="@+id/buttonInstall"
-            />
-
         <Button
-            android:id="@+id/buttonInstall"
+            android:id="@+id/buttonRead"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/inner_margin"
             android:layout_marginBottom="@dimen/outer_margin"
             android:layout_marginRight="@dimen/inner_margin_medium"
             android:padding="@dimen/padding"
-            android:onClick="onClickInstall"
+            android:onClick="onClickRead"
             android:background="@drawable/button"
             android:textSize="@dimen/font_size_large"
-            android:text="@string/install_button"
+            android:text="@string/read"
             android:textColor="@color/white"
             android:layout_alignParentBottom="true"
-            android:layout_toLeftOf="@id/buttonRetrieve"
+            android:layout_toLeftOf="@id/buttonEmail"
             />
 
         <Button
-            android:id="@+id/buttonRetrieve"
+            android:id="@+id/buttonEmail"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/inner_margin"
             android:layout_marginBottom="@dimen/outer_margin"
             android:layout_marginRight="@dimen/outer_margin"
             android:padding="@dimen/padding"
-            android:onClick="onClickRetrieve"
+            android:onClick="onClickEmail"
             android:background="@drawable/button"
             android:textSize="@dimen/font_size_large"
-            android:text="@string/retrieveButton"
+            android:text="@string/email"
             android:textColor="@color/white"
             android:layout_alignParentRight="true"
             android:layout_alignParentBottom="true"

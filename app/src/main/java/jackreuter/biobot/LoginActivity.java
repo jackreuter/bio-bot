@@ -2,14 +2,17 @@ package jackreuter.biobot;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -17,8 +20,18 @@ import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class LoginActivity extends Activity {
 
@@ -26,6 +39,11 @@ public class LoginActivity extends Activity {
     EditText userIDEditText;
     SharedPreferences pref;
     SharedPreferences.Editor editor;
+
+    // for admin screen access
+    private int count = 0;
+    private long startMillis=0;
+    private final String ADMIN_PASSWORD = "biobot";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,6 +83,62 @@ public class LoginActivity extends Activity {
             startActivity(citySelectionActivityIntent);
         }
 
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+
+        int eventaction = event.getAction();
+        if (eventaction == MotionEvent.ACTION_UP) {
+
+            //get system current milliseconds
+            long time= System.currentTimeMillis();
+
+
+            //if it is the first time, or if it has been more than 3 seconds since the first tap ( so it is like a new try), we reset everything
+            if (startMillis==0 || (time-startMillis> 3000) ) {
+                startMillis=time;
+                count=1;
+            }
+            //it is not the first, and it has been  less than 3 seconds since the first
+            else{ //  time-startMillis< 3000
+                count++;
+            }
+
+            if (count==5) {
+                final Dialog dialog = new Dialog(LoginActivity.this);
+                dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+                dialog.setContentView(R.layout.admin_dialog);
+
+                final EditText editTextPassword = (EditText) dialog.findViewById(R.id.editTextPassword);
+                Button buttonContinue = (Button) dialog.findViewById(R.id.buttonContinue);
+                Button buttonCancel = (Button) dialog.findViewById(R.id.buttonCancel);
+
+                buttonContinue.setOnClickListener(new Button.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        // get selected radio button from radioGroup
+                        if (editTextPassword.getText().toString().equals(ADMIN_PASSWORD)) {
+                            Intent adminActivityIntent= new Intent(LoginActivity.this, AdminActivity.class);
+                            startActivity(adminActivityIntent);
+                        } else {
+                            largeToast("Wrong password", LoginActivity.this);
+                        }
+                    }
+                });
+
+                buttonCancel.setOnClickListener(new Button.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        dialog.dismiss();
+                    }
+                });
+
+                dialog.show();
+            }
+            return true;
+        }
+        return false;
     }
 
     /** Pull text from editTextLogin and log user in if non-empty */

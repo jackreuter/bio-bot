@@ -210,6 +210,15 @@ public class CitySelectionActivity extends FragmentActivity implements OnMapRead
         startActivity(logoutIntent);
     }
 
+    /** back button equivalent to logout */
+    @Override
+    public void onBackPressed() {
+        Intent logoutIntent = new Intent(CitySelectionActivity.this, LoginActivity.class);
+        logoutIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        logoutIntent.putExtra("logout", true);
+        startActivity(logoutIntent);
+    }
+
     /** increase size of toast text */
     public void largeToast(String message, Context context) {
         Toast toast = Toast.makeText(context, message, Toast.LENGTH_LONG);

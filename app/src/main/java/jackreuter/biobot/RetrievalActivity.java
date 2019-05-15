@@ -60,6 +60,8 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import org.w3c.dom.Text;
+
 public class RetrievalActivity extends Activity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener {
 
     // Google location services
@@ -86,7 +88,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
 
     // UI
     Button logoutButton, readButton;
-    TextView cityManholeTextView, userIDTextView, installLogTextView, notesTextView;
+    TextView cityManholeTextView, userIDTextView, installLogTextView, notesTextView, textViewFeedback;
     EditText notesEditText;
     Button buttonScanQrCode;
     RadioGroup radioGroupGreenLedStatus, radioGroupSamplePlacedOnIce;
@@ -259,6 +261,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         userIDTextView = (TextView) findViewById(R.id.textViewUserID);
         installLogTextView = (TextView) findViewById(R.id.textViewInstallLog);
         notesTextView = (TextView) findViewById(R.id.textViewNotes);
+        textViewFeedback = (TextView) findViewById(R.id.textViewFeedback);
         notesEditText = (EditText) findViewById(R.id.editTextNotes);
         readButton = (Button) findViewById(R.id.buttonRead);
         buttonScanQrCode = (Button) findViewById(R.id.buttonScanQrCode);
@@ -343,7 +346,6 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
 
         //INITIALIZE GLOBAL VARIABLES
         transmissionEnded = false;
-        transmissionEnded = false;
         serialConnectionOpen = false;
 
     }
@@ -400,10 +402,6 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         final Dialog dialog = new Dialog(RetrievalActivity.this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.radiobutton_dialog);
-        List<String> stringList = new ArrayList<>();  // here is list
-        for(int i=0;i<5;i++) {
-            stringList.add("RadioButton " + (i + 1));
-        }
 
         final RadioGroup rg = (RadioGroup) dialog.findViewById(R.id.radio_group);
         Button buttonContinue = (Button) dialog.findViewById(R.id.buttonContinue);
@@ -490,6 +488,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
 
     /** send cue to read file from arduino */
     public void onClickRead(View view) {
+        // doing test file, not final code
         if (!serialConnectionOpen) {
             largeToast("Serial connection not open. Reconnect Teensy", RetrievalActivity.this);
         } else {
@@ -639,6 +638,16 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         serialConnectionOpen = false;
     }
 
+    /** increase size of toast text */
+    public void largeToast(String message, Context context) {
+        Toast toast = Toast.makeText(context, message, Toast.LENGTH_LONG);
+        toast.setGravity(Gravity.CENTER, 0, 0);
+        ViewGroup group = (ViewGroup) toast.getView();
+        TextView messageTextView = (TextView) group.getChildAt(0);
+        messageTextView.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.font_size_large));
+        toast.show();
+    }
+
     /** -----------------------------------LOCATION SERVICES-------------------------------- */
 
 
@@ -739,16 +748,6 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
                 locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-    }
-
-    /** increase size of toast text */
-    public void largeToast(String message, Context context) {
-        Toast toast = Toast.makeText(context, message, Toast.LENGTH_LONG);
-        toast.setGravity(Gravity.CENTER, 0, 0);
-        ViewGroup group = (ViewGroup) toast.getView();
-        TextView messageTextView = (TextView) group.getChildAt(0);
-        messageTextView.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.font_size_large));
-        toast.show();
     }
 
 }
