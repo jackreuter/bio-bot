@@ -256,7 +256,6 @@ public class InstallActivity extends Activity  implements GoogleApiClient.Connec
                                 spinnerAdapter.notifyDataSetChanged();
                             }
                         } else {
-                            //Log.w("data ayy", "Error getting documents.", task.getException());
                         }
                     }
                 });
@@ -367,12 +366,19 @@ public class InstallActivity extends Activity  implements GoogleApiClient.Connec
         return "";
     }
 
+    /** logout current user and return to login screen */
     public void onClickLogout(View view) {
         Intent logoutIntent = new Intent(InstallActivity.this, LoginActivity.class);
         logoutIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
         logoutIntent.putExtra("logout", true);
         startActivity(logoutIntent);
     }
+
+    /** back button same function as built in android back button */
+    public void onClickBack(View view) {
+        this.onBackPressed();
+    }
+
 
     /** -----------------------------------LOCATION SERVICES-------------------------------- */
 

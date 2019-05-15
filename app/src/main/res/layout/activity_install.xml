@@ -304,6 +304,17 @@
 
             />
 
+        <Button
+            android:id="@+id/buttonBack"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:layout_marginBottom="@dimen/outer_margin"
+            android:background="@drawable/ic_baseline_back_24px"
+            android:onClick="onClickBack"
+            android:layout_alignParentBottom="true"
+            />
+
     </RelativeLayout>
 
 </android.support.constraint.ConstraintLayout>

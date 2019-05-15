@@ -226,7 +226,7 @@ public class AdminActivity extends Activity {
     /** end connection if disconnected */
     public void endSerialConnection() {
         if (transmissionInProgress) {
-            textViewAppendAndScroll(textViewFeedback, scrollViewFeedback, "Error in transmission, please reconnect and try again\n\n");
+            textViewAppendAndScroll(textViewFeedback, scrollViewFeedback, "\nError in transmission, please reconnect and try again\n");
         }
         if (serialPort != null && serialConnectionOpen) {
             serialPort.close();
@@ -485,7 +485,6 @@ public class AdminActivity extends Activity {
 
         //convert from paths to Android friendly Parcelable Uri's
         for (RetrievalFile file : files) {
-            Log.d("ayyy file", file.filename);
             File fileIn = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + FOLDER_NAME, file.filename);
             Uri u = FileProvider.getUriForFile(AdminActivity.this, AdminActivity.this.getApplicationContext().getPackageName() + ".provider", fileIn);
             uris.add(u);

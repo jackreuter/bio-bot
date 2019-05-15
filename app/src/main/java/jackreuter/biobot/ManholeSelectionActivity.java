@@ -311,6 +311,11 @@ public class ManholeSelectionActivity extends Activity {
         startActivity(logoutIntent);
     }
 
+    /** back button same function as built in android back button */
+    public void onClickBack(View view) {
+        this.onBackPressed();
+    }
+
     /** increase size of toast text */
     public void largeToast(String message, Context context) {
         Toast toast = Toast.makeText(context, message, Toast.LENGTH_LONG);

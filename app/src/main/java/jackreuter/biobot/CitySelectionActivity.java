@@ -168,7 +168,6 @@ public class CitySelectionActivity extends FragmentActivity implements OnMapRead
                                 spinnerAdapter.notifyDataSetChanged();
                             }
                         } else {
-                            //Log.w("data ayy", "Error getting documents.", task.getException());
                         }
                     }
                 });

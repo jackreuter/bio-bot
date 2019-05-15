@@ -365,9 +365,22 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="@dimen/padding"
                 android:textSize="@dimen/font_size_small"
-                android:textColor="@color/text_color"
-                android:layout_toRightOf="@+id/buttonRead"
+                android:textColor="@color/colorAccent"
+                android:layout_toRightOf="@+id/imageViewReadDataCheck"
                 android:layout_below="@id/textViewPlugInDevice"
+                />
+
+            <TextView
+                android:id="@+id/textViewDoNotDisconnect"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="@dimen/padding"
+                android:textSize="@dimen/font_size_small"
+                android:textColor="@color/colorAccent"
+                android:text="@string/do_not_disconnect"
+                android:visibility="invisible"
+                android:layout_toRightOf="@+id/imageViewReadDataCheck"
+                android:layout_below="@id/textViewFeedback"
                 />
 
             <ImageView
@@ -423,6 +436,17 @@
             android:layout_marginBottom="@dimen/outer_margin"
             android:layout_centerHorizontal="true"
             android:layout_below="@+id/editTextNotes"
+            />
+
+        <Button
+            android:id="@+id/buttonBack"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_marginLeft="@dimen/outer_margin"
+            android:layout_marginBottom="@dimen/outer_margin"
+            android:background="@drawable/ic_baseline_back_24px"
+            android:onClick="onClickBack"
+            android:layout_alignParentBottom="true"
             />
 
 

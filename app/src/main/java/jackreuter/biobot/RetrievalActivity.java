@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -56,6 +57,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -77,8 +79,8 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
 
     // file parsing
     public final String START_FILENAME = "!";
-    public final String START_FILE = "\\$";
-    public final String END_FILE = "\\^";
+    public final String START_FILE = "$";
+    public final String END_FILE = "^";
     public final String END_TRANSMISSION = "&";
     public final String INQUIRY = "~";
     public final String ID = "*";
@@ -88,7 +90,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
 
     // UI
     Button logoutButton, readButton;
-    TextView cityManholeTextView, userIDTextView, installLogTextView, notesTextView, textViewFeedback;
+    TextView cityManholeTextView, userIDTextView, installLogTextView, notesTextView, textViewFeedback, textViewDoNotDisconnect;
     EditText notesEditText;
     Button buttonScanQrCode;
     RadioGroup radioGroupGreenLedStatus, radioGroupSamplePlacedOnIce;
@@ -104,8 +106,6 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
     com.felhr.usbserial.UsbSerialDevice serialPort;
 
     // global variables
-    String[] filenames;
-    String[] contents;
     String userID;
     String cityID;
     String manholeID;
@@ -113,7 +113,11 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
     String greenLedStatus;
     String samplePlacedOnIce;
     String qrCode;
-    Boolean transmissionEnded;
+
+    ArrayList<RetrievalFile> files;
+    RetrievalFile currentFile;
+    String excess;
+    Boolean transmissionInProgress;
     Boolean serialConnectionOpen;
 
     // QR intent request
@@ -126,33 +130,18 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         public void onReceivedData(byte[] arg0) {
             String data;
             try {
+                // deal with files running over size of received data
                 data = new String(arg0, "UTF-8");
-                if (data.length() > 0) {
-                    String cue = data.substring(0, 1);
-                    if (cue.equals(START_FILENAME)) {
-                        /**
-                         * example data:    !190111_I.TXT$TONS OF TEXT FAKE DATA BLAH BLAH BLAH^
-                         *                  !190117_A.TXT$MORE FAKE DATA BLAH BLAH BLAHDI BLOO^
-                         *                  &
-                         */
-                        //split data into array of files,
-                        String[] files = data.split("\n");
-
-                        //ditch the end character
-                        filenames = new String[files.length - 1];
-                        contents = new String[files.length - 1];
-
-                        //split files into filenames and contents
-                        for (int i = 0; i < files.length - 1; i++) {
-                            String[] fileAndContents = files[i].split(START_FILE);
-                            filenames[i] = fileAndContents[0].substring(1); //strip off the start and end characters
-                            contents[i] = fileAndContents[1].substring(0, fileAndContents[1].length()-2);
-                        }
-                    } else {
+                int lastNewLine = data.lastIndexOf("\n");
+                if (lastNewLine != -1) {
+                    String lastLine = data.substring(lastNewLine + 1);
+                    if (!lastLine.contains(END_TRANSMISSION)) {
+                        data = data.substring(0, lastNewLine);
+                        data = excess + data;
+                        excess = lastLine;
                     }
-                } else {
                 }
-                transmissionEnded = true;
+                processIncomingData(data);
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
             }
@@ -173,7 +162,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                     if (serialPort != null) {
                         if (serialPort.open()) { //Set Serial Connection Parameters.
                             readButton.setEnabled(true); //Enable Buttons in UI
-                            serialPort.setBaudRate(9600);
+                            serialPort.setBaudRate(115200);
                             serialPort.setDataBits(UsbSerialInterface.DATA_BITS_8);
                             serialPort.setStopBits(UsbSerialInterface.STOP_BITS_1);
                             serialPort.setParity(UsbSerialInterface.PARITY_NONE);
@@ -181,7 +170,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                             serialPort.read(mCallback); //
                             largeToast("Serial connection opened", RetrievalActivity.this);
                             serialConnectionOpen = true;
-
+                            readButton.setEnabled(true);
                         } else {
                             largeToast("Port not open", RetrievalActivity.this);
                         }
@@ -199,31 +188,6 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         }
 
     };
-
-    /** save variables during recreation, e.g. rotation*/
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-
-        String notesTextEntered = notesEditText.getText().toString();
-        if (notesTextEntered != null) {
-            outState.putString("notesTextEntered", notesTextEntered);
-        } else {
-            outState.putString("notesTextEntered", "");
-        }
-
-        if (filenames != null) {
-            outState.putStringArray("filenames", filenames);
-        } else {
-            outState.putStringArray("filenames", new String[0]);
-        }
-        if (contents != null) {
-            outState.putStringArray("contents", contents);
-        } else {
-            outState.putStringArray("contents", new String[0]);
-        }
-
-    }
 
     /** create variables, receiver, try to connect in case already plugged in
      get variables from savedInstanceState if possible */
@@ -262,9 +226,11 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         installLogTextView = (TextView) findViewById(R.id.textViewInstallLog);
         notesTextView = (TextView) findViewById(R.id.textViewNotes);
         textViewFeedback = (TextView) findViewById(R.id.textViewFeedback);
+        textViewDoNotDisconnect = (TextView) findViewById(R.id.textViewDoNotDisconnect);
         notesEditText = (EditText) findViewById(R.id.editTextNotes);
         readButton = (Button) findViewById(R.id.buttonRead);
         buttonScanQrCode = (Button) findViewById(R.id.buttonScanQrCode);
+
         imageViewScanQrCodeCheck = (ImageView) findViewById(R.id.imageViewScanQrCodeCheck);
         imageViewReadDataCheck = (ImageView) findViewById(R.id.imageViewReadDataCheck);
         imageViewGreedLedStatusAlert = (ImageView) findViewById(R.id.imageViewGreenLedStatusAlert);
@@ -306,7 +272,6 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                             if (installData == null) {
                                 installLogTextView.append("No install log found");
                             } else {
-                                Log.d("ayy", installData.keySet()+"");
                                 installLogTextView.append("Device installed on: " + installDate + "\n");
                                 installLogTextView.append("Installed by: " + installData.get("deploymentUser") + "\n");
                                 installLogTextView.append("Notes: " + installData.get("deploymentNotes"));
@@ -337,16 +302,11 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
             }
         });
 
-        //IF SCREEN ROTATED OR APP PAUSED FOR SOME REASON
-        if (savedInstanceState != null) {
-            notesEditText.setText(savedInstanceState.getString("notesTextEntered"), TextView.BufferType.EDITABLE);
-            filenames = savedInstanceState.getStringArray("filenames");
-            contents = savedInstanceState.getStringArray("contents");
-        }
-
         //INITIALIZE GLOBAL VARIABLES
-        transmissionEnded = false;
+        transmissionInProgress = false;
         serialConnectionOpen = false;
+        files = new ArrayList<>();
+        excess = "";
 
     }
 
@@ -492,7 +452,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         if (!serialConnectionOpen) {
             largeToast("Serial connection not open. Reconnect Teensy", RetrievalActivity.this);
         } else {
-            transmissionEnded = false;
+            transmissionInProgress = false;
             if (checkLocation()) {
                 if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                     String[] permissions = {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
@@ -508,13 +468,158 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                 if (location == null) {
                     largeToast("Location not detected, wait and try again", RetrievalActivity.this);
                 } else {
+                    transmissionInProgress = true;
+                    imageViewReadDataCheck.setVisibility(View.INVISIBLE);
+                    textViewDoNotDisconnect.setVisibility(View.VISIBLE);
+                    textViewDoNotDisconnect.setText("DO NOT DISCONNECT");
                     serialPort.write(INQUIRY.getBytes());
-                    while (!transmissionEnded) { }
-                    imageViewReadDataCheck.setVisibility(View.VISIBLE);
-                    imageViewReadDataAlert.setVisibility(View.INVISIBLE);
                 }
             }
         }
+    }
+
+    /** takes incoming serial data and processes into files */
+    public void processIncomingData(String data) {
+        if (data.length() > 0) {
+            String cue = data.substring(0, 1);
+
+            if (cue.equals(START_FILENAME)) {
+                if (data.contains(START_FILE)) {
+                    //chomp filename
+                    int startFileIndex = data.indexOf(START_FILE);
+                    currentFile = new RetrievalFile(data.substring(1, startFileIndex));
+                    textViewSetText(textViewFeedback, "File found: "+currentFile);
+
+                    //process the rest of the data
+                    processIncomingData(data.substring(startFileIndex));
+                } else {
+                    textViewSetText(textViewFeedback, "Error in file format");
+                }
+
+            } else if (cue.equals(START_FILE)) {
+                if (data.contains(END_FILE)) {
+                    //chomp contents
+                    int endFileIndex = data.indexOf(END_FILE);
+                    processFieldsAndContents(data.substring(1, endFileIndex));
+                    files.add(currentFile);
+                    textViewSetText(textViewFeedback, "End of file");
+
+                    //process the rest of the data
+                    if (data.length() > endFileIndex + 2) {
+                        processIncomingData(data.substring(endFileIndex + 2)); //skip endfile symbol and newline character after
+                    }
+                } else {
+                    processFieldsAndContents(data.substring(1));
+                }
+
+            } else if (cue.equals(END_TRANSMISSION)) {
+                textViewSetText(textViewFeedback, "Transmission complete");
+                currentFile = null;
+                transmissionInProgress = false;
+                viewSetVisibility(imageViewReadDataCheck, View.VISIBLE);
+                viewSetVisibility(imageViewReadDataAlert, View.INVISIBLE);
+                viewSetVisibility(textViewDoNotDisconnect, View.INVISIBLE);
+
+            } else {
+                if (currentFile != null) {
+                    if (data.contains(END_FILE)) {
+                        //chomp contents
+                        int endFileIndex = data.indexOf(END_FILE);
+                        processContents(data.substring(1, endFileIndex));
+                        files.add(currentFile);
+                        textViewSetText(textViewFeedback, "End of file");
+
+                        //process the rest of the data
+                        if (data.length() > endFileIndex + 2) {
+                            processIncomingData(data.substring(endFileIndex + 2)); //skip endfile symbol and newline character after
+                        }
+                    } else {
+                        processContents(data);
+                    }
+                } else {
+                }
+            }
+
+        } else {
+        }
+    }
+
+    /** process both fields and contents of incoming data file*/
+    public void processFieldsAndContents(String data) {
+        if (data.length() > 0) {
+            String[] fieldsAndContents = data.split("\n\n");
+            if (fieldsAndContents.length > 1) {
+                String fields = fieldsAndContents[0];
+                String contents = fieldsAndContents[1];
+
+                if (contents.contains("\n")) {
+                    int namesSplit = contents.indexOf("\n");
+                    String columnNames = contents.substring(0, namesSplit);
+                    contents = contents.substring(namesSplit + 1);
+
+                    processFields(fields);
+                    processColumnNames(columnNames);
+                    processContents(contents);
+                }
+            }
+        }
+    }
+
+    /** parse fields of data file into hashmap, return the rest of the data file */
+    public void processFields(String data) {
+        String[] keyAndValueStrings = data.split("\n");
+        for (int i = 0; i < keyAndValueStrings.length; i++) {
+            String[] keyAndValuePair = keyAndValueStrings[i].split(":");
+            if (keyAndValuePair.length > 1) {
+                currentFile.addField(keyAndValuePair[0], chompFrontWhiteSpace(keyAndValuePair[1]));
+            }
+        }
+    }
+
+    /** parse the column names out of the data file */
+    public void processColumnNames(String data) {
+        String[] columnNames = data.split("\t");
+        currentFile.setColumnNames(columnNames);
+    }
+
+    /** parse contents of data file into 2d array */
+    public void processContents(String data) {
+        String[] rows = data.split("\n");
+        for (int i = 0; i < rows.length; i++) {
+            String[] row = rows[i].split("\t");
+            currentFile.addRow(row);
+        }
+        textViewSetText(textViewFeedback, "Processed " + currentFile.rows.size() + " lines of data");
+    }
+
+    /** removes any whitespace "\t" "\n" or " " from front of string */
+    public String chompFrontWhiteSpace(String s) {
+        if (s.length() >  0) {
+            while (s.substring(0,1).contains(" ") || s.substring(0,1).contains("\t") || s.substring(0,1).contains("\n")) {
+                s = s.substring(1);
+            }
+        }
+        return s;
+    }
+
+    /** to print feedback during callback thread */
+    private void textViewSetText(final TextView tv, final CharSequence text) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                tv.setText(text);
+            }
+        });
+    }
+
+    /** to show completion check during callback thread */
+    private void viewSetVisibility(final View v, final int visibility) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                v.setVisibility(visibility);
+            }
+        });
     }
 
     /** upload data to database and return to manhole selection screen */
@@ -522,13 +627,14 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         if (greenLedStatus != null &&
                 qrCode != null &&
                 samplePlacedOnIce != null &&
-                transmissionEnded) {
+                !transmissionInProgress) {
             saveToDatabase();
         } else {
             largeToast("Please complete all fields", RetrievalActivity.this);
         }
     }
 
+    /** upload data entries as retrieval log, files collected as collections */
     public void saveToDatabase() {
         String locationString;
         if (location == null) {
@@ -546,7 +652,9 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                 qrCode
         );
 
-        db = FirebaseFirestore.getInstance();
+        String timeString = getDateCurrentTimeZone(System.currentTimeMillis() / 1000);
+
+        // save retrieval log
         db.collection("cities")
                 .document(cityID)
                 .collection("manholes")
@@ -554,7 +662,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                 .collection("deployments")
                 .document(installDate)
                 .collection("retrieval log")
-                .document(getDateCurrentTimeZone(System.currentTimeMillis() / 1000))
+                .document(timeString)
                 .set(log)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
@@ -569,6 +677,68 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                     }
                 });
 
+        // save files
+        for (RetrievalFile file : files) {
+
+            // save fields
+            db.collection("cities")
+                    .document(cityID)
+                    .collection("manholes")
+                    .document(manholeID)
+                    .collection("deployments")
+                    .document(installDate)
+                    .collection("retrieval log")
+                    .document(timeString)
+                    .collection(file.filename)
+                    .document("contents")
+                    .set(file.fields)
+                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            Log.d("FIRESTORE", "DocumentSnapshot successfully written!");
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Log.w("FIRESTORE", "Error writing document", e);
+                        }
+                    });
+
+            for (String[] row : file.rows) {
+                LinkedHashMap<String, String> rowMap = createMapFromRow(row, file.columnNames);
+                String rowTimeString = getTimeStampFromRow(row);
+
+                // save contents
+                db.collection("cities")
+                        .document(cityID)
+                        .collection("manholes")
+                        .document(manholeID)
+                        .collection("deployments")
+                        .document(installDate)
+                        .collection("retrieval log")
+                        .document(timeString)
+                        .collection(file.filename)
+                        .document("contents")
+                        .collection("data")
+                        .document(rowTimeString)
+                        .set(rowMap)
+                        .addOnSuccessListener(new OnSuccessListener<Void>() {
+                            @Override
+                            public void onSuccess(Void aVoid) {
+                                Log.d("FIRESTORE", "DocumentSnapshot successfully written!");
+                            }
+                        })
+                        .addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                Log.w("FIRESTORE", "Error writing document", e);
+                            }
+                        });
+            }
+
+        }
+
         Intent feedbackActivityIntent = new Intent(RetrievalActivity.this, FeedbackActivity.class);
         feedbackActivityIntent.putExtra("user_id", userID);
         feedbackActivityIntent.putExtra("manhole_id", manholeID);
@@ -577,12 +747,64 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
 
     }
 
+    /** used to create map from row of data file, in order to upload to firestore*/
+    public LinkedHashMap createMapFromRow(String[] row, String[] header) {
+        LinkedHashMap<String, String> map = new LinkedHashMap<>();
+        if (row != null) {
+            for (int i = 0; i < row.length && i < header.length; i++) {
+                map.put(header[i], row[i]);
+            }
+        }
+        return map;
+    }
+
+    /** get timestamp from first 6 row entries, used as unique ID */
+    public String getTimeStampFromRow(String[] row) {
+        String timeStamp = "";
+        if (row.length >= 6) {
+            String year = row[0];
+            String month = row[1];
+            String day = row[2];
+            String hour = row[3];
+            String minute = row[4];
+            String second = row[5];
+
+            if (month.length() == 1) {
+                month = "0" + month;
+            }
+            if (day.length() == 1) {
+                day= "0" + day;
+            }
+            if (hour.length() == 1) {
+                hour = "0" + hour;
+            }
+            if (minute.length() == 1) {
+                minute = "0" + minute;
+            }
+            if (second.length() == 1) {
+                second = "0" + second;
+            }
+            timeStamp = year + "-"
+                    + month + "-"
+                    + day + " "
+                    + hour + ":"
+                    + minute + ":"
+                    + second;
+        }
+        return timeStamp;
+    }
+
     /** log out user and send back to login screen */
     public void onClickLogout(View view) {
         Intent logoutIntent = new Intent(RetrievalActivity.this, LoginActivity.class);
         logoutIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
         logoutIntent.putExtra("logout", true);
         startActivity(logoutIntent);
+    }
+
+    /** back button same function as built in android back button */
+    public void onClickBack(View view) {
+        this.onBackPressed();
     }
 
     /** get timestamp and format*/
@@ -631,6 +853,10 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
 
     /** end connection if disconnected */
     public void endSerialConnection() {
+        if (transmissionInProgress) {
+            textViewSetText(textViewFeedback, "Error in transmission");
+            textViewSetText(textViewDoNotDisconnect, "Reconnect and try again");
+        }
         if (serialPort != null && serialConnectionOpen) {
             serialPort.close();
             largeToast("Serial connection closed", RetrievalActivity.this);
