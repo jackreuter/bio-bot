@@ -1,4 +1,4 @@
-package jackreuter.biobot;
+package com.biobot.boxapp;
 
 import android.support.v4.content.FileProvider;
 

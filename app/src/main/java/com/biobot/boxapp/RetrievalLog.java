@@ -1,4 +1,4 @@
-package jackreuter.biobot;
+package com.biobot.boxapp;
 
 public class RetrievalLog {
     String retrievalUser;

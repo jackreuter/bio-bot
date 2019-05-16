@@ -1,4 +1,4 @@
-package jackreuter.biobot;
+package com.biobot.boxapp;
 
 import android.app.Activity;
 import android.app.PendingIntent;
@@ -9,7 +9,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.RequiresApi;
 import android.support.v4.content.FileProvider;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;

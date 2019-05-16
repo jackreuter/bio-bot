@@ -1,4 +1,4 @@
-package jackreuter.biobot;
+package com.biobot.boxapp;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

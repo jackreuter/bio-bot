@@ -1,4 +1,4 @@
-package jackreuter.biobot;
+package jackreuter.boxapp;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

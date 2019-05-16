@@ -1,4 +1,4 @@
-package jackreuter.biobot;
+package jackreuter.boxapp;
 
 import org.junit.Test;
 

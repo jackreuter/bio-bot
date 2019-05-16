@@ -10,7 +10,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:658217989402:android:ec656430744a8c9e",
         "android_client_info": {
-          "package_name": "jackreuter.biobot"
+          "package_name": "com.biobot.boxapp"
         }
       },
       "oauth_client": [
