@@ -77,7 +77,7 @@
             android:layout_marginRight="@dimen/outer_margin"
             android:padding="@dimen/padding"
             android:layout_below="@id/feedbackTitleTextView"
-            android:layout_above="@+id/buttonRead"
+            android:layout_above="@+id/buttonReadData"
             >
             <TextView
                 android:id="@+id/textViewFeedback"
@@ -89,7 +89,7 @@
         </ScrollView>
 
         <Button
-            android:id="@+id/buttonRead"
+            android:id="@+id/buttonReadData"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/inner_margin"

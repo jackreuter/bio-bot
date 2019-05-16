@@ -21,7 +21,7 @@ public class FeedbackActivity extends Activity {
     TextView textViewManhole;
     TextView textViewSuccess;
     KonfettiView konfettiView;
-    Button nextButton;
+    Button buttonNext;
     String userID;
     String cityID;
     String manholeID;
@@ -40,7 +40,7 @@ public class FeedbackActivity extends Activity {
         textViewYouRock = findViewById(R.id.textViewYouRock);
         textViewManhole = findViewById(R.id.textViewManhole);
         textViewSuccess = findViewById(R.id.textViewSuccess);
-        nextButton = findViewById(R.id.buttonNext);
+        buttonNext = findViewById(R.id.buttonNext);
 
         Intent intent = getIntent();
         userID = intent.getStringExtra("user_id");
@@ -103,7 +103,7 @@ public class FeedbackActivity extends Activity {
     /** back button equivalent to next */
     @Override
     public void onBackPressed() {
-        nextButton.performClick();
+        buttonNext.performClick();
     }
 
 }

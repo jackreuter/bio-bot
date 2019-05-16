@@ -34,7 +34,7 @@
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
             android:textStyle="italic"
-            android:layout_above="@+id/selectCityTextView"
+            android:layout_above="@+id/textViewSelectCity"
             android:layout_toLeftOf="@id/buttonLogout"
             android:layout_toRightOf="@id/imageViewLogo"
             />
@@ -55,7 +55,7 @@
             />
 
         <TextView
-            android:id="@+id/selectCityTextView"
+            android:id="@+id/textViewSelectCity"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/select_city"
@@ -78,7 +78,7 @@
             android:layout_marginRight="@dimen/outer_margin"
             android:background="@color/white"
             android:layout_centerHorizontal="true"
-            android:layout_below="@+id/selectCityTextView"
+            android:layout_below="@+id/textViewSelectCity"
             />
 
         <FrameLayout

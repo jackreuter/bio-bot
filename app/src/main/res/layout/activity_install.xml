@@ -248,7 +248,7 @@
             />
 
         <Spinner
-            android:id="@+id/lightStatusSpinner"
+            android:id="@+id/spinnerLightStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginRight="@dimen/outer_margin"
@@ -269,7 +269,7 @@
             android:textColor="@color/text_color"
             android:text="@string/notes"
             android:textStyle="bold"
-            android:layout_below="@+id/lightStatusSpinner"
+            android:layout_below="@+id/spinnerLightStatus"
             />
 
         <EditText

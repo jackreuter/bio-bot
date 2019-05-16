@@ -82,13 +82,10 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
     public final String INQUIRY = "~";
     public final String ID = "*";
 
-    // must equal name field in provider_paths.xml
-    public final String FOLDER_NAME = "data";
-
     // UI
-    Button logoutButton, readButton;
-    TextView cityManholeTextView, userIDTextView, installLogTextView, notesTextView, textViewFeedback, textViewDoNotDisconnect;
-    EditText notesEditText;
+    Button buttonLogout, buttonRead;
+    TextView textViewCityManhole, textViewUserID, textViewInstallLog, textViewNotes, textViewFeedback, textViewDoNotDisconnect;
+    EditText editTextNotes;
     Button buttonScanQrCode;
     RadioGroup radioGroupGreenLedStatus, radioGroupSamplePlacedOnIce;
     ImageView imageViewScanQrCodeCheck, imageViewReadDataCheck;
@@ -158,7 +155,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                     serialPort = UsbSerialDevice.createUsbSerialDevice(device, connection);
                     if (serialPort != null) {
                         if (serialPort.open()) { //Set Serial Connection Parameters.
-                            readButton.setEnabled(true); //Enable Buttons in UI
+                            buttonRead.setEnabled(true); //Enable Buttons in UI
                             serialPort.setBaudRate(115200);
                             serialPort.setDataBits(UsbSerialInterface.DATA_BITS_8);
                             serialPort.setStopBits(UsbSerialInterface.STOP_BITS_1);
@@ -167,7 +164,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                             serialPort.read(mCallback); //
                             largeToast("Serial connection opened", RetrievalActivity.this);
                             serialConnectionOpen = true;
-                            readButton.setEnabled(true);
+                            buttonRead.setEnabled(true);
                         } else {
                             largeToast("Port not open", RetrievalActivity.this);
                         }
@@ -217,15 +214,15 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         db = FirebaseFirestore.getInstance();
 
         //CREATE UI
-        logoutButton = (Button) findViewById(R.id.buttonLogout);
-        cityManholeTextView = (TextView) findViewById(R.id.textViewCityManhole);
-        userIDTextView = (TextView) findViewById(R.id.textViewUserID);
-        installLogTextView = (TextView) findViewById(R.id.textViewInstallLog);
-        notesTextView = (TextView) findViewById(R.id.textViewNotes);
+        buttonLogout = (Button) findViewById(R.id.buttonLogout);
+        textViewCityManhole = (TextView) findViewById(R.id.textViewCityManhole);
+        textViewUserID = (TextView) findViewById(R.id.textViewUserID);
+        textViewInstallLog = (TextView) findViewById(R.id.textViewInstallLog);
+        textViewNotes = (TextView) findViewById(R.id.textViewNotes);
         textViewFeedback = (TextView) findViewById(R.id.textViewFeedback);
         textViewDoNotDisconnect = (TextView) findViewById(R.id.textViewDoNotDisconnect);
-        notesEditText = (EditText) findViewById(R.id.editTextNotes);
-        readButton = (Button) findViewById(R.id.buttonRead);
+        editTextNotes = (EditText) findViewById(R.id.editTextNotes);
+        buttonRead = (Button) findViewById(R.id.buttonRead);
         buttonScanQrCode = (Button) findViewById(R.id.buttonScanQrCode);
 
         imageViewScanQrCodeCheck = (ImageView) findViewById(R.id.imageViewScanQrCodeCheck);
@@ -247,11 +244,11 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         cityID = intent.getStringExtra("city_id");
         manholeID = intent.getStringExtra("manhole_id");
         installDate = intent.getStringExtra("install_date");
-        cityManholeTextView.setText(manholeID + ", " + cityID);
-        userIDTextView.setText("Hi " + userID + "!");
+        textViewCityManhole.setText(manholeID + ", " + cityID);
+        textViewUserID.setText("Hi " + userID + "!");
 
         // get install log from database and set text view
-        installLogTextView.setText("");
+        textViewInstallLog.setText("");
         db.collection("cities")
                 .document(cityID)
                 .collection("manholes")
@@ -267,11 +264,11 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                             DocumentSnapshot document = task.getResult();
                             Map<String, Object> installData = document.getData();
                             if (installData == null) {
-                                installLogTextView.append("No install log found");
+                                textViewInstallLog.append("No install log found");
                             } else {
-                                installLogTextView.append("Device installed on: " + installDate + "\n");
-                                installLogTextView.append("Installed by: " + installData.get("deploymentUser") + "\n");
-                                installLogTextView.append("Notes: " + installData.get("deploymentNotes"));
+                                textViewInstallLog.append("Device installed on: " + installDate + "\n");
+                                textViewInstallLog.append("Installed by: " + installData.get("deploymentUser") + "\n");
+                                textViewInstallLog.append("Notes: " + installData.get("deploymentNotes"));
                             }
                         }
                     }
@@ -307,20 +304,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
 
     }
 
-    // save QR code image
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == QR_INTENT_REQUEST_CODE) {
-            if (resultCode == RESULT_OK) {
-                String text = data.getDataString();
-                qrCode = text;
-                imageViewScanQrCodeCheck.setVisibility(View.VISIBLE);
-                imageViewScanQrCodeAlert.setVisibility(View.INVISIBLE);
-            }
-        }
-    }
-
+    /** set up broadcast receiver to listen for arduino and location services to get GPS coordinates*/
     @Override
     protected void onStart() {
         super.onStart();
@@ -338,6 +322,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
 
     }
 
+    /** unregister broadcast receiver, end serial connection with arduino, stop location services */
     @Override
     protected void onStop() {
         super.onStop();
@@ -351,6 +336,48 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         if (googleApiClient.isConnected()) {
             googleApiClient.disconnect();
         }
+    }
+
+    /** connects arduino if found, triggers broadcastReceiver to open up a serial connection */
+    public void connectArduino() {
+        HashMap<String, UsbDevice> usbDevices = usbManager.getDeviceList();
+        if (!usbDevices.isEmpty()) {
+            boolean keep = true;
+            for (Map.Entry<String, UsbDevice> entry : usbDevices.entrySet()) {
+                device = entry.getValue();
+                //int deviceVID = device.getVendorId();
+                //Toast.makeText(RetrievalActivity.this, "Vendor ID: " + Integer.toString(deviceVID), Toast.LENGTH_LONG).show();
+                //if (deviceVID == 6790)//Arduino Vendor ID, not sure where to find
+                try {
+                    PendingIntent pi = PendingIntent.getBroadcast(this, 0,
+                            new Intent(ACTION_USB_PERMISSION), 0);
+                    usbManager.requestPermission(device, pi);
+                    keep = false;
+
+                } catch (Exception e) {
+                    connection = null;
+                    device = null;
+                }
+
+                if (!keep)
+                    break;
+            }
+        } else {
+            largeToast("No devices found", RetrievalActivity.this);
+        }
+    }
+
+    /** end connection if disconnected */
+    public void endSerialConnection() {
+        if (transmissionInProgress) {
+            textViewSetText(textViewFeedback, "Error in transmission");
+            textViewSetText(textViewDoNotDisconnect, "Reconnect and try again");
+        }
+        if (serialPort != null && serialConnectionOpen) {
+            serialPort.close();
+            largeToast("Serial connection closed", RetrievalActivity.this);
+        }
+        serialConnectionOpen = false;
     }
 
     /** create a dialog to select one of three most recent installs */
@@ -441,6 +468,20 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
     public void onClickScanQrCode(View view) {
         Intent qrCodeScannerActivityIntent = new Intent(RetrievalActivity.this, QrCodeScannerActivity.class);
         RetrievalActivity.this.startActivityForResult(qrCodeScannerActivityIntent, QR_INTENT_REQUEST_CODE);
+    }
+
+    /** scan QR code and save result string */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == QR_INTENT_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                String text = data.getDataString();
+                qrCode = text;
+                imageViewScanQrCodeCheck.setVisibility(View.VISIBLE);
+                imageViewScanQrCodeAlert.setVisibility(View.INVISIBLE);
+            }
+        }
     }
 
     /** send cue to read file from arduino */
@@ -599,26 +640,6 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         return s;
     }
 
-    /** to print feedback during callback thread */
-    private void textViewSetText(final TextView tv, final CharSequence text) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                tv.setText(text);
-            }
-        });
-    }
-
-    /** to show completion check during callback thread */
-    private void viewSetVisibility(final View v, final int visibility) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                v.setVisibility(visibility);
-            }
-        });
-    }
-
     /** upload data to database and return to manhole selection screen */
     public void onClickDone(View view) {
         if (greenLedStatus != null &&
@@ -645,7 +666,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                 locationString,
                 greenLedStatus,
                 samplePlacedOnIce,
-                notesEditText.getText().toString(),
+                editTextNotes.getText().toString(),
                 qrCode
         );
 
@@ -747,7 +768,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
     /** used to create map from row of data file, in order to upload to firestore*/
     public LinkedHashMap createMapFromRow(String[] row, String[] header) {
         LinkedHashMap<String, String> map = new LinkedHashMap<>();
-        if (row != null) {
+        if (row != null && header != null) {
             for (int i = 0; i < row.length && i < header.length; i++) {
                 map.put(header[i], row[i]);
             }
@@ -804,6 +825,26 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         this.onBackPressed();
     }
 
+    /** to print feedback during callback thread */
+    private void textViewSetText(final TextView tv, final CharSequence text) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                tv.setText(text);
+            }
+        });
+    }
+
+    /** to show completion check during callback thread */
+    private void viewSetVisibility(final View v, final int visibility) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                v.setVisibility(visibility);
+            }
+        });
+    }
+
     /** get timestamp and format*/
     public String getDateCurrentTimeZone(long timestamp) {
         try {
@@ -817,48 +858,6 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
         } catch (Exception e) {
         }
         return "";
-    }
-
-    /** connects arduino if found, triggers broadcastReceiver to open up a serial connection */
-    public void connectArduino() {
-        HashMap<String, UsbDevice> usbDevices = usbManager.getDeviceList();
-        if (!usbDevices.isEmpty()) {
-            boolean keep = true;
-            for (Map.Entry<String, UsbDevice> entry : usbDevices.entrySet()) {
-                device = entry.getValue();
-                //int deviceVID = device.getVendorId();
-                //Toast.makeText(RetrievalActivity.this, "Vendor ID: " + Integer.toString(deviceVID), Toast.LENGTH_LONG).show();
-                //if (deviceVID == 6790)//Arduino Vendor ID, not sure where to find
-                try {
-                    PendingIntent pi = PendingIntent.getBroadcast(this, 0,
-                            new Intent(ACTION_USB_PERMISSION), 0);
-                    usbManager.requestPermission(device, pi);
-                    keep = false;
-
-                } catch (Exception e) {
-                    connection = null;
-                    device = null;
-                }
-
-                if (!keep)
-                    break;
-            }
-        } else {
-            largeToast("No devices found", RetrievalActivity.this);
-        }
-    }
-
-    /** end connection if disconnected */
-    public void endSerialConnection() {
-        if (transmissionInProgress) {
-            textViewSetText(textViewFeedback, "Error in transmission");
-            textViewSetText(textViewDoNotDisconnect, "Reconnect and try again");
-        }
-        if (serialPort != null && serialConnectionOpen) {
-            serialPort.close();
-            largeToast("Serial connection closed", RetrievalActivity.this);
-        }
-        serialConnectionOpen = false;
     }
 
     /** increase size of toast text */
@@ -878,7 +877,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
     @Override
     public void onConnected(Bundle bundle) {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
+            //Consider calling
             //    ActivityCompat#requestPermissions
             // here to request the missing permissions, and then overriding
             //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
@@ -905,7 +904,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                 .setFastestInterval(FASTEST_INTERVAL);
         // Request location updates
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
+            //Consider calling
             //    ActivityCompat#requestPermissions
             // here to request the missing permissions, and then overriding
             //   public void onRequestPermissionsResult(int requestCode, String[] permissions,

@@ -36,8 +36,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-import com.biobot.boxapp.GlideApp;
-
 public class ManholeSelectionActivity extends Activity {
 
     // Cloud Firestore database and storage
@@ -45,9 +43,9 @@ public class ManholeSelectionActivity extends Activity {
     FirebaseStorage storage;
 
     // UI elements
-    TextView userIDTextView;
-    RadioGroup manholeRadioGroup;
-    ImageView mapImageView;
+    TextView textViewUserID;
+    RadioGroup radioGroupManhole;
+    ImageView imageViewMap;
 
     // Global variables
     String cityID;
@@ -62,14 +60,14 @@ public class ManholeSelectionActivity extends Activity {
         setContentView(R.layout.activity_manhole_selection);
 
         // create UI
-        userIDTextView = (TextView) findViewById(R.id.textViewUserID);
-        manholeRadioGroup = (RadioGroup) findViewById(R.id.radioGroupManholes);
-        mapImageView = (ImageView) findViewById(R.id.imageViewMap);
+        textViewUserID = (TextView) findViewById(R.id.textViewUserID);
+        radioGroupManhole = (RadioGroup) findViewById(R.id.radioGroupManholes);
+        imageViewMap = (ImageView) findViewById(R.id.imageViewMap);
 
         Intent intent = getIntent();
         userID = intent.getStringExtra("user_id");
         cityID = intent.getStringExtra("city_id");
-        userIDTextView.setText("Hi " + userID + "!");
+        textViewUserID.setText("Hi " + userID + "!");
 
         // CLOUD FIRESTORE DATABASE SYNC
         db = FirebaseFirestore.getInstance();
@@ -89,7 +87,7 @@ public class ManholeSelectionActivity extends Activity {
 
                 if (snapshot != null) {
                     // clear views
-                    manholeRadioGroup.removeAllViews();
+                    radioGroupManhole.removeAllViews();
 
                     // repopulate
                     Boolean first = true;
@@ -115,7 +113,7 @@ public class ManholeSelectionActivity extends Activity {
                                     (int) getResources().getDimension(R.dimen.inner_margin));
                         }
                         manholeRadioButton.setLayoutParams(params);
-                        manholeRadioGroup.addView(manholeRadioButton);
+                        radioGroupManhole.addView(manholeRadioButton);
                     }
 
                 } else {
@@ -125,7 +123,7 @@ public class ManholeSelectionActivity extends Activity {
         });
 
         // handle radio button selection to get map image and update manholeID
-        manholeRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener()
+        radioGroupManhole.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener()
         {
             @Override
             public void onCheckedChanged(RadioGroup group, int checkedId) {
@@ -146,12 +144,12 @@ public class ManholeSelectionActivity extends Activity {
                                 // load map image
                                 String mapURL = document.getString("mapURL");
                                 if (mapURL == null) {
-                                    mapImageView.setImageResource(0);
+                                    imageViewMap.setImageResource(0);
                                 } else {
-                                    mapImageView.setAdjustViewBounds(true);
+                                    imageViewMap.setAdjustViewBounds(true);
                                     GlideApp.with(ManholeSelectionActivity.this)
                                             .load(mapURL)
-                                            .into(mapImageView);
+                                            .into(imageViewMap);
                                 }
 
                             } else {
@@ -335,6 +333,7 @@ public class ManholeSelectionActivity extends Activity {
         startActivity(retrievalActivityIntent);
     }
 
+    /** alter default alert dialog, could also be achieved with a custom dialog */
     public void enlargeTextAlertDialog(AlertDialog ad) {
         TextView textViewMessage = (TextView) ad.findViewById(android.R.id.message);
         Button buttonYes = ad.getButton(Dialog.BUTTON_POSITIVE);

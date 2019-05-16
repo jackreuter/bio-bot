@@ -5,7 +5,6 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.RequiresApi;
@@ -55,7 +54,7 @@ public class AdminActivity extends Activity {
     public final String FOLDER_NAME = "data";
 
     // UI
-    Button readButton, emailButton;
+    Button buttonReadData, buttonEmail;
     ScrollView scrollViewFeedback;
     TextView textViewFeedback;
 
@@ -112,7 +111,7 @@ public class AdminActivity extends Activity {
                     serialPort = UsbSerialDevice.createUsbSerialDevice(device, connection);
                     if (serialPort != null) {
                         if (serialPort.open()) { //Set Serial Connection Parameters.
-                            readButton.setEnabled(true); //Enable Buttons in UI
+                            buttonReadData.setEnabled(true); //Enable Buttons in UI
                             serialPort.setBaudRate(115200);
                             serialPort.setDataBits(UsbSerialInterface.DATA_BITS_8);
                             serialPort.setStopBits(UsbSerialInterface.STOP_BITS_1);
@@ -121,7 +120,7 @@ public class AdminActivity extends Activity {
                             serialPort.read(mCallback); //
                             largeToast("Serial connection opened", AdminActivity.this);
                             serialConnectionOpen = true;
-                            readButton.setEnabled(true);
+                            buttonReadData.setEnabled(true);
                         } else {
                             largeToast("Port not open", AdminActivity.this);
                         }
@@ -161,10 +160,10 @@ public class AdminActivity extends Activity {
         //UI
         scrollViewFeedback = (ScrollView) findViewById(R.id.scrollViewFeedback);
         textViewFeedback = (TextView) findViewById(R.id.textViewFeedback);
-        readButton = (Button) findViewById(R.id.buttonRead);
-        emailButton = (Button) findViewById(R.id.buttonEmail);
-        readButton.setEnabled(false);
-        emailButton.setEnabled(false);
+        buttonReadData = (Button) findViewById(R.id.buttonReadData);
+        buttonEmail = (Button) findViewById(R.id.buttonEmail);
+        buttonReadData.setEnabled(false);
+        buttonEmail.setEnabled(false);
 
         //INITIALIZE GLOBAL VARIABLES
         transmissionInProgress = false;
@@ -233,7 +232,7 @@ public class AdminActivity extends Activity {
             largeToast("Serial connection closed", AdminActivity.this);
         }
         serialConnectionOpen = false;
-        readButton.setEnabled(false);
+        buttonReadData.setEnabled(false);
     }
 
     /** takes incoming serial data and processes into files */
@@ -413,7 +412,7 @@ public class AdminActivity extends Activity {
                 feedback += "File written to:\n" + file + "\n";
             }
             textViewAppendAndScroll(textViewFeedback, scrollViewFeedback, feedback + "\n");
-            setEnabledOnUI(emailButton, true);
+            setEnabledOnUI(buttonEmail, true);
         } catch (FileNotFoundException e) {
             String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
             requestPermissions(permissions, 1);

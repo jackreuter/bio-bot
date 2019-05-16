@@ -20,8 +20,8 @@ import android.widget.Toast;
 
 public class LoginActivity extends Activity {
 
-    Button loginButton;
-    EditText userIDEditText;
+    Button buttonLogin;
+    EditText editTextUserID;
     SharedPreferences pref;
     SharedPreferences.Editor editor;
 
@@ -36,8 +36,8 @@ public class LoginActivity extends Activity {
         setContentView(R.layout.activity_login);
 
         //UI ELEMENTS
-        loginButton = findViewById(R.id.buttonLogin);
-        userIDEditText = findViewById(R.id.editTextUserID);
+        buttonLogin = findViewById(R.id.buttonLogin);
+        editTextUserID = findViewById(R.id.editTextUserID);
 
         //REQUEST PERMISSIONS
         String[] permissions = {
@@ -128,7 +128,7 @@ public class LoginActivity extends Activity {
 
     /** Pull text from editTextLogin and log user in if non-empty */
     public void onClickLogin(View view) {
-        final String textEntered = userIDEditText.getText().toString();
+        final String textEntered = editTextUserID.getText().toString();
         if (textEntered.equals("")) {
             largeToast("Must enter User ID", LoginActivity.this);
         } else {

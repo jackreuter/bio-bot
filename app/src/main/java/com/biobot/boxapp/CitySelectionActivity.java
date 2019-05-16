@@ -42,13 +42,12 @@ public class CitySelectionActivity extends FragmentActivity implements OnMapRead
     FirebaseFirestore db;
 
     // UI elements
-    TextView userIDTextView;
-    Spinner citySpinner;
+    TextView textViewUserID;
+    Spinner spinnerCity;
 
     // Global variables
     String cityID;
     String userID;
-    String installDate;
 
     // City map
     private GoogleMap mMap;
@@ -59,15 +58,15 @@ public class CitySelectionActivity extends FragmentActivity implements OnMapRead
         setContentView(R.layout.activity_city_selection);
 
         // create UI
-        userIDTextView = (TextView) findViewById(R.id.textViewUserID);
-        citySpinner = (Spinner) findViewById(R.id.city_spinner);
-        final ArrayAdapter citySpinnerAdapter = new ArrayAdapter<String>(this, R.layout.spinner_item, new ArrayList<String>());
-        citySpinnerAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
-        citySpinner.setAdapter(citySpinnerAdapter);
+        textViewUserID = (TextView) findViewById(R.id.textViewUserID);
+        spinnerCity = (Spinner) findViewById(R.id.city_spinner);
+        final ArrayAdapter spinnerCityAdapter = new ArrayAdapter<String>(this, R.layout.spinner_item, new ArrayList<String>());
+        spinnerCityAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+        spinnerCity.setAdapter(spinnerCityAdapter);
 
         Intent intent = getIntent();
         userID = intent.getStringExtra("user_id");
-        userIDTextView.setText("Hi " + userID + "!");
+        textViewUserID.setText("Hi " + userID + "!");
 
         // CLOUD FIRESTORE DATABASE SYNC
         db = FirebaseFirestore.getInstance();
@@ -83,7 +82,7 @@ public class CitySelectionActivity extends FragmentActivity implements OnMapRead
                 }
 
                 if (snapshot != null) {
-                    updateSpinner(citiesRef, citySpinnerAdapter);
+                    updateSpinner(citiesRef, spinnerCityAdapter);
                 } else {
                     Log.d("FIRESTORE", "Current data: null");
                 }
@@ -91,7 +90,7 @@ public class CitySelectionActivity extends FragmentActivity implements OnMapRead
         });
 
         // listen for city selection
-        citySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        spinnerCity.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
                 cityID = parentView.getItemAtPosition(position).toString();

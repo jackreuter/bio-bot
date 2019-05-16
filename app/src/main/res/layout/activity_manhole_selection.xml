@@ -32,7 +32,7 @@
             android:textSize="@dimen/font_size_large"
             android:textColor="@color/text_color"
             android:textStyle="italic"
-            android:layout_above="@+id/selectManholeTextView"
+            android:layout_above="@+id/textViewSelectManhole"
             android:layout_toLeftOf="@id/buttonLogout"
             android:layout_toRightOf="@id/imageViewLogo"
             />
@@ -53,7 +53,7 @@
             />
 
         <TextView
-            android:id="@+id/selectManholeTextView"
+            android:id="@+id/textViewSelectManhole"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/select_manhole"
@@ -72,7 +72,7 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="@dimen/outer_margin"
             android:layout_marginRight="@dimen/outer_margin"
-            android:layout_below="@+id/selectManholeTextView"
+            android:layout_below="@+id/textViewSelectManhole"
             android:layout_above="@+id/imageViewMap"
             android:layout_marginTop="@dimen/inner_margin"
             android:layout_marginBottom="@dimen/inner_margin"

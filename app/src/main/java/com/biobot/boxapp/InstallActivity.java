@@ -54,15 +54,15 @@ import java.util.Map;
 public class InstallActivity extends Activity  implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener {
 
     TextView textViewCityManhole;
-    TextView userIDTextView;
-    Spinner boxIDSpinner;
+    TextView textViewUserID;
+    Spinner spinnerBoxID;
     CheckBox checkBoxNewBatteryInstalled;
     CheckBox checkBoxNewPanelInstalled;
     CheckBox checkBoxInletAssemblyPluggedIn;
     EditText editTextResetTime;
     EditText editTextLightTurnedGreen;
-    Spinner lightStatusSpinner;
-    ArrayAdapter<String> lightStatusSpinnerAdapter;
+    Spinner spinnerLightStatus;
+    ArrayAdapter<String> spinnerAdapterLightStatus;
     EditText editTextNotes;
 
     // cloud firestore database
@@ -102,7 +102,7 @@ public class InstallActivity extends Activity  implements GoogleApiClient.Connec
 
         // ui elements
         textViewCityManhole = (TextView) findViewById(R.id.textViewCityManhole);
-        userIDTextView = (TextView) findViewById(R.id.textViewUserID);
+        textViewUserID = (TextView) findViewById(R.id.textViewUserID);
         checkBoxNewBatteryInstalled = (CheckBox) findViewById(R.id.checkBoxNewBatteryInstalled);
         checkBoxNewPanelInstalled = (CheckBox) findViewById(R.id.checkBoxNewPanelInstalled);
         checkBoxInletAssemblyPluggedIn= (CheckBox) findViewById(R.id.checkBoxInletAssemblyPluggedIn);
@@ -113,15 +113,15 @@ public class InstallActivity extends Activity  implements GoogleApiClient.Connec
         ArrayList<String> lightStatusOptions = new ArrayList();
         lightStatusOptions.add("Blinking");
         lightStatusOptions.add("Solid");
-        lightStatusSpinner = (Spinner) findViewById(R.id.lightStatusSpinner);
-        lightStatusSpinnerAdapter = new ArrayAdapter<String>(this, R.layout.spinner_item, lightStatusOptions);
-        lightStatusSpinnerAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
-        lightStatusSpinner.setAdapter(lightStatusSpinnerAdapter);
+        spinnerLightStatus = (Spinner) findViewById(R.id.spinnerLightStatus);
+        spinnerAdapterLightStatus = new ArrayAdapter<String>(this, R.layout.spinner_item, lightStatusOptions);
+        spinnerAdapterLightStatus.setDropDownViewResource(R.layout.spinner_dropdown_item);
+        spinnerLightStatus.setAdapter(spinnerAdapterLightStatus);
 
-        boxIDSpinner = (Spinner) findViewById(R.id.spinnerBoxID);
-        final ArrayAdapter boxIDSpinnerAdapter = new ArrayAdapter<String>(this, R.layout.spinner_item, new ArrayList<String>());
-        boxIDSpinnerAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
-        boxIDSpinner.setAdapter(boxIDSpinnerAdapter);
+        spinnerBoxID = (Spinner) findViewById(R.id.spinnerBoxID);
+        final ArrayAdapter spinnerBoxIDAdapter = new ArrayAdapter<String>(this, R.layout.spinner_item, new ArrayList<String>());
+        spinnerBoxIDAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+        spinnerBoxID.setAdapter(spinnerBoxIDAdapter);
 
         editTextResetTime.setInputType(InputType.TYPE_NULL);
         editTextLightTurnedGreen.setInputType(InputType.TYPE_NULL);
@@ -132,7 +132,7 @@ public class InstallActivity extends Activity  implements GoogleApiClient.Connec
         cityID = intent.getStringExtra("city_id");
         manholeID = intent.getStringExtra("manhole_id");
         textViewCityManhole.setText(manholeID + ", " + cityID);
-        userIDTextView.setText("Hi " + userID + "!");
+        textViewUserID.setText("Hi " + userID + "!");
 
         // create spinner for boxID selection
         // listen for changes in database to repopulate spinner
@@ -140,7 +140,7 @@ public class InstallActivity extends Activity  implements GoogleApiClient.Connec
 
         final CollectionReference boxIDsRef = db.collection("cities")
                 .document(cityID)
-                .collection("boxIDs");
+                .collection("boxes");
 
         boxIDsRef.addSnapshotListener(new EventListener<QuerySnapshot>() {
             @Override
@@ -151,7 +151,7 @@ public class InstallActivity extends Activity  implements GoogleApiClient.Connec
                 }
 
                 if (snapshot != null) {
-                    updateSpinner(boxIDsRef, boxIDSpinnerAdapter);
+                    updateSpinner(boxIDsRef, spinnerBoxIDAdapter);
                 } else {
                     Log.d("FIRESTORE", "Current data: null");
                 }
@@ -159,7 +159,7 @@ public class InstallActivity extends Activity  implements GoogleApiClient.Connec
         });
 
         // listen for boxID selection
-        boxIDSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        spinnerBoxID.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
                 boxID = parentView.getItemAtPosition(position).toString();
@@ -219,7 +219,7 @@ public class InstallActivity extends Activity  implements GoogleApiClient.Connec
         });
 
         // handle spinner selections
-        lightStatusSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        spinnerLightStatus.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
                 lightStatusString = parentView.getItemAtPosition(position).toString();
@@ -376,7 +376,7 @@ public class InstallActivity extends Activity  implements GoogleApiClient.Connec
     @Override
     public void onConnected(Bundle bundle) {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
+            //Consider calling
             //    ActivityCompat#requestPermissions
             // here to request the missing permissions, and then overriding
             //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
@@ -403,7 +403,7 @@ public class InstallActivity extends Activity  implements GoogleApiClient.Connec
                 .setFastestInterval(FASTEST_INTERVAL);
         // Request location updates
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
+            // Consider calling
             //    ActivityCompat#requestPermissions
             // here to request the missing permissions, and then overriding
             //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
