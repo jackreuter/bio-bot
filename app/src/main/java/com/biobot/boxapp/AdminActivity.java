@@ -46,6 +46,7 @@ public class AdminActivity extends Activity {
     public final String END_FILE = "^";
     public final String END_TRANSMISSION = "&";
     public final String INQUIRY = "~";
+    public final String INQUIRY_ALL = "+";
     public final String ID = "*";
     public final String EMAIL_RECIPIENT = "jreuter@wesleyan.edu";
     public final String EMAIL_SUBJECT = "BIOBOT";
@@ -67,8 +68,9 @@ public class AdminActivity extends Activity {
     com.felhr.usbserial.UsbSerialDevice serialPort;
 
     // global variables
-    ArrayList<RetrievalFile> files;
-    RetrievalFile currentFile;
+    ArrayList<String> filenames;
+    int linesRead;
+    String currentFilename;
     String excess;
     Boolean transmissionInProgress;
     Boolean serialConnectionOpen;
@@ -82,16 +84,20 @@ public class AdminActivity extends Activity {
             try {
                 // deal with files running over size of received data
                 data = new String(arg0, "UTF-8");
-                int lastNewLine = data.lastIndexOf("\n");
-                if (lastNewLine != -1) {
-                    String lastLine = data.substring(lastNewLine + 1);
-                    if (!lastLine.contains(END_TRANSMISSION)) {
-                        data = data.substring(0, lastNewLine);
-                        data = excess + data;
-                        excess = lastLine;
+                if (transmissionInProgress) {
+                    int lastNewLine = data.lastIndexOf("\n");
+                    if (lastNewLine != -1) {
+                        String lastLine = data.substring(lastNewLine + 1);
+                        if (!lastLine.contains(END_TRANSMISSION)) {
+                            data = data.substring(0, lastNewLine);
+                            data = excess + data;
+                            excess = lastLine;
+                        }
                     }
+                    processIncomingData(data);
+                } else {
+                    //textViewAppendAndScroll(textViewFeedback, scrollViewFeedback, data + "\n");
                 }
-                processIncomingData(data);
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
             }
@@ -168,7 +174,9 @@ public class AdminActivity extends Activity {
         //INITIALIZE GLOBAL VARIABLES
         transmissionInProgress = false;
         serialConnectionOpen = false;
-        files = new ArrayList<>();
+        currentFilename = "";
+        filenames = new ArrayList<>();
+        linesRead = 0;
         excess = "";
     }
 
@@ -226,6 +234,7 @@ public class AdminActivity extends Activity {
     public void endSerialConnection() {
         if (transmissionInProgress) {
             textViewAppendAndScroll(textViewFeedback, scrollViewFeedback, "\nError in transmission, please reconnect and try again\n");
+            transmissionInProgress = false;
         }
         if (serialPort != null && serialConnectionOpen) {
             serialPort.close();
@@ -237,6 +246,7 @@ public class AdminActivity extends Activity {
 
     /** takes incoming serial data and processes into files */
     public void processIncomingData(String data) {
+        //textViewAppendAndScroll(textViewFeedback, scrollViewFeedback, "DATA: " + data + "\n");
         if (data.length() > 0) {
             String cue = data.substring(0, 1);
 
@@ -244,8 +254,10 @@ public class AdminActivity extends Activity {
                 if (data.contains(START_FILE)) {
                     //chomp filename
                     int startFileIndex = data.indexOf(START_FILE);
-                    currentFile = new RetrievalFile(data.substring(1, startFileIndex));
-                    textViewAppendAndScroll(textViewFeedback, scrollViewFeedback, "File found: "+currentFile+"\n");
+                    currentFilename = data.substring(1, startFileIndex);
+                    filenames.add(currentFilename);
+                    linesRead = 0;
+                    textViewAppendAndScroll(textViewFeedback, scrollViewFeedback, "File found: "+currentFilename+"\n");
 
                     //process the rest of the data
                     processIncomingData(data.substring(startFileIndex));
@@ -257,39 +269,36 @@ public class AdminActivity extends Activity {
                 if (data.contains(END_FILE)) {
                     //chomp contents
                     int endFileIndex = data.indexOf(END_FILE);
-                    processFieldsAndContents(data.substring(1, endFileIndex));
-                    files.add(currentFile);
+                    writeContentsToFile(currentFilename, data.substring(1, endFileIndex));
                     textViewAppendAndScroll(textViewFeedback, scrollViewFeedback, "End of file\n\n");
 
                     //process the rest of the data
-                    if (data.length() > endFileIndex + 2) {
-                        processIncomingData(data.substring(endFileIndex + 2)); //skip endfile symbol and newline character after
+                    if (data.length() > endFileIndex + 3) {
+                        processIncomingData(data.substring(endFileIndex + 3)); //skip endfile symbol and newline character after
                     }
                 } else {
-                    processFieldsAndContents(data.substring(1));
+                    writeContentsToFile(currentFilename, data.substring(1));
                 }
 
             } else if (cue.equals(END_TRANSMISSION)) {
                 textViewAppendAndScroll(textViewFeedback, scrollViewFeedback, "Transmission complete\n\n");
-                currentFile = null;
+                currentFilename = "";
                 transmissionInProgress = false;
-                save();
 
             } else {
-                if (currentFile != null) {
+                if (currentFilename.length() > 0) {
                     if (data.contains(END_FILE)) {
                         //chomp contents
                         int endFileIndex = data.indexOf(END_FILE);
-                        processContents(data.substring(1, endFileIndex));
-                        files.add(currentFile);
+                        writeContentsToFile(currentFilename, data.substring(1, endFileIndex));
                         textViewAppendAndScroll(textViewFeedback, scrollViewFeedback, "End of file\n\n");
 
                         //process the rest of the data
-                        if (data.length() > endFileIndex + 2) {
-                            processIncomingData(data.substring(endFileIndex + 2)); //skip endfile symbol and newline character after
+                        if (data.length() > endFileIndex + 3) {
+                            processIncomingData(data.substring(endFileIndex + 3)); //skip endfile symbol and newline character after
                         }
                     } else {
-                        processContents(data);
+                        writeContentsToFile(currentFilename, data);
                     }
                 } else {
                 }
@@ -297,64 +306,6 @@ public class AdminActivity extends Activity {
 
         } else {
         }
-    }
-
-    /** process both fields and contents of incoming data file*/
-    public void processFieldsAndContents(String data) {
-        if (data.length() > 0) {
-            String[] fieldsAndContents = data.split("\n\n");
-            if (fieldsAndContents.length > 1) {
-                String fields = fieldsAndContents[0];
-                String contents = fieldsAndContents[1];
-
-                if (contents.contains("\n")) {
-                    int namesSplit = contents.indexOf("\n");
-                    String columnNames = contents.substring(0, namesSplit);
-                    contents = contents.substring(namesSplit + 1);
-
-                    processFields(fields);
-                    processColumnNames(columnNames);
-                    processContents(contents);
-                }
-            }
-        }
-    }
-
-    /** parse fields of data file into hashmap, return the rest of the data file */
-    public void processFields(String data) {
-        String[] keyAndValueStrings = data.split("\n");
-        for (int i = 0; i < keyAndValueStrings.length; i++) {
-            String[] keyAndValuePair = keyAndValueStrings[i].split(":");
-            if (keyAndValuePair.length > 1) {
-                currentFile.addField(keyAndValuePair[0], chompFrontWhiteSpace(keyAndValuePair[1]));
-            }
-        }
-    }
-
-    /** parse the column names out of the data file */
-    public void processColumnNames(String data) {
-        String[] columnNames = data.split("\t");
-        currentFile.setColumnNames(columnNames);
-    }
-
-    /** parse contents of data file into 2d array */
-    public void processContents(String data) {
-        String[] rows = data.split("\n");
-        for (int i = 0; i < rows.length; i++) {
-            String[] row = rows[i].split("\t");
-            currentFile.addRow(row);
-        }
-        textViewAppendAndScroll(textViewFeedback, scrollViewFeedback, "Processed " + currentFile.rows.size() + " lines of data\n");
-    }
-
-    /** removes any whitespace "\t" "\n" or " " from front of string */
-    public String chompFrontWhiteSpace(String s) {
-        if (s.length() >  0) {
-            while (s.substring(0,1).contains(" ") || s.substring(0,1).contains("\t") || s.substring(0,1).contains("\n")) {
-                s = s.substring(1);
-            }
-        }
-        return s;
     }
 
     /**
@@ -381,11 +332,13 @@ public class AdminActivity extends Activity {
     }
 
     /**
-     * Method to write ascii text characters to file on SD card. Note that you must add a
+     * Method to write ascii text characters to file on external storage. Note that you must add a
      * WRITE_EXTERNAL_STORAGE permission to the manifest file or this method will throw
      * a FileNotFound Exception because you won't have write permission.
      */
-    private void writeToSDFile() {
+    public void writeContentsToFile(String filename, String contents) {
+        checkExternalMedia();
+
         // Find the root of the external storage.
         // See http://developer.android.com/guide/topics/data/data-  storage.html#filesExternal
 
@@ -398,20 +351,18 @@ public class AdminActivity extends Activity {
         dir.mkdirs();
 
         try {
-            String feedback = "";
-            for (int i = 0; i < files.size(); i++) {
-                File file = new File(dir, files.get(i).filename);
-                FileOutputStream f = new FileOutputStream(file);
-                PrintWriter pw = new PrintWriter(f);
+            File file = new File(dir, filename);
+            FileOutputStream f = new FileOutputStream(file, true);
+            PrintWriter pw = new PrintWriter(f);
+            pw.write(contents);
+            pw.flush();
+            pw.close();
+            f.close();
 
-                writeRetrievalFile(pw, files.get(i));
+            linesRead += contents.split("\n").length;
+            //feedback += "File written to:\n" + file + "\n";
 
-                pw.flush();
-                pw.close();
-                f.close();
-                feedback += "File written to:\n" + file + "\n";
-            }
-            textViewAppendAndScroll(textViewFeedback, scrollViewFeedback, feedback + "\n");
+            textViewAppendAndScroll(textViewFeedback, scrollViewFeedback, linesRead + " lines read\n");
             setEnabledOnUI(buttonEmail, true);
         } catch (FileNotFoundException e) {
             String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
@@ -424,47 +375,16 @@ public class AdminActivity extends Activity {
         }
     }
 
-    /** recreate data file format */
-    public void writeRetrievalFile(PrintWriter printWriter, RetrievalFile file) {
-        if (file.fields != null) {
-            for (String key : file.fields.keySet()) {
-                printWriter.write(key + ":\t" + file.fields.get(key) + "\n");
-            }
-            printWriter.write("\n");
-        }
-
-        if (file.columnNames != null) {
-            for (String column : file.columnNames) {
-                printWriter.write(column + "\t");
-            }
-            printWriter.write("\n");
-        }
-
-        if (file.rows != null) {
-            for (String[] row : file.rows) {
-                for (String entry : row) {
-                    printWriter.write(entry + "\t");
-                }
-                printWriter.write("\n");
-            }
-        }
-    }
-
-    /**
-     * save files stored in global variables filenames[] and contents[] to SD card
-     */
-    public void save() {
-        checkExternalMedia();
-        writeToSDFile();
-    }
-
     /** send cue to read file from arduino */
     public void onClickRead(View view) {
         if (!serialConnectionOpen) {
             largeToast("Serial connection not open. Reconnect Teensy", AdminActivity.this);
+        } else if (transmissionInProgress) {
+            largeToast("Transmission already in progress", AdminActivity.this);
         } else {
             transmissionInProgress = true;
-            serialPort.write(INQUIRY.getBytes());
+            currentFilename = "";
+            serialPort.write(INQUIRY_ALL.getBytes());
         }
     }
 
@@ -483,8 +403,8 @@ public class AdminActivity extends Activity {
         ArrayList<Uri> uris = new ArrayList<Uri>();
 
         //convert from paths to Android friendly Parcelable Uri's
-        for (RetrievalFile file : files) {
-            File fileIn = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + FOLDER_NAME, file.filename);
+        for (String filename : filenames) {
+            File fileIn = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + FOLDER_NAME, filename);
             Uri u = FileProvider.getUriForFile(AdminActivity.this, AdminActivity.this.getApplicationContext().getPackageName() + ".provider", fileIn);
             uris.add(u);
         }

@@ -80,6 +80,7 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
     public final String END_FILE = "^";
     public final String END_TRANSMISSION = "&";
     public final String INQUIRY = "~";
+    public final String INQUIRY_ALL = "+";
     public final String ID = "*";
 
     // UI
@@ -543,8 +544,8 @@ public class RetrievalActivity extends Activity implements GoogleApiClient.Conne
                     textViewSetText(textViewFeedback, "End of file");
 
                     //process the rest of the data
-                    if (data.length() > endFileIndex + 2) {
-                        processIncomingData(data.substring(endFileIndex + 2)); //skip endfile symbol and newline character after
+                    if (data.length() > endFileIndex + 3) {
+                        processIncomingData(data.substring(endFileIndex + 3)); //skip endfile symbol and newline character after
                     }
                 } else {
                     processFieldsAndContents(data.substring(1));
